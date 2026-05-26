@@ -5,6 +5,18 @@ import os, json, html, datetime
 from data import (SITE, OPS, TEAM, SERVICES, THERAPISTS, MAGAZINE, FAQ_MAIN,
                   REVIEWS_MAIN, REGIONS, arrival_minutes, district_rating,
                   district_review_count, district_reviews)
+from content import (SERVICE_SECTIONS, SERVICE_EXTRA, THERAPIST_SECTIONS,
+                     THERAPIST_COMMON, THERAPIST_EXTRA, METRO_SECTIONS)
+
+def prose_section(heading, paras, eyebrow=None):
+    eb = f'<span class="eyebrow">{esc(eyebrow)}</span>' if eyebrow else ""
+    ps = "".join(f"<p>{esc(p)}</p>" for p in paras)
+    return f'<section class="wrap tight">{eb}<h2>{esc(heading)}</h2><div class="prose" style="margin-top:16px;max-width:680px">{ps}</div></section>'
+
+def notes_section(heading, sections, eyebrow=None, start=1):
+    eb = f'<span class="eyebrow">{esc(eyebrow)}</span>' if eyebrow else ""
+    nh = "".join(note(i, h, p) for i, (h, p) in enumerate(sections, start))
+    return f'<section class="wrap tight">{eb}<h2>{esc(heading)}</h2><div class="notes" style="margin-top:24px">{nh}</div></section>'
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = SITE["domain"]
@@ -562,37 +574,76 @@ def build_services():
         f'<h3>{esc(s["ko"])} 마사지</h3><p>{esc(s["summary"])}</p><span class="more">자세히 →</span></a>'
         for s in SERVICES)
     cb = [("홈", "/"), ("서비스", None)]
+    choose = [
+        ("풀어 주는 코스 — 스웨디시·아로마", [
+            "오일을 사용해 전신을 부드럽게 풀어 주는 코스입니다.",
+            "스웨디시는 순환과 근육 이완에, 아로마는 향을 통한 정서적 이완과 수면에 무게를 둡니다.",
+            "마사지가 처음이거나 자기 전 받고 싶은 분께 권합니다.",
+        ]),
+        ("늘려 주는 코스 — 타이", [
+            "오일 없이 지압과 스트레칭으로 가동 범위를 넓히는 건식 코스입니다.",
+            "오래 앉아 굳은 몸을 시원하게 펴고 싶거나, 끈적임 없이 받고 싶은 분께 잘 맞습니다.",
+        ]),
+        ("감싸 주는 코스 — 로미로미", [
+            "팔뚝 전체로 파도처럼 흐르는 하와이 전통 코스입니다.",
+            "특정 통증보다 전반적인 피로와 긴장을 깊게 풀고 싶은 분께 권합니다.",
+        ]),
+        ("눌러 주는 코스 — 스포츠", [
+            "강한 압으로 특정 부위의 뭉침을 집중 관리하는 회복형 코스입니다.",
+            "운동 후 근육 피로나 또렷한 어깨·허리 통증이 있는 분께 권합니다.",
+        ]),
+    ]
+    ch_html = notes_section("어떤 코스를 고를까", choose, eyebrow="HOW TO CHOOSE")
+    faqs = [
+        ("처음인데 뭘 골라야 하나요?", "스웨디시 90분이 가장 무난합니다. 예약 시 컨디션을 말씀하시면 함께 골라 드립니다."),
+        ("코스를 도착 후 바꿀 수 있나요?", "가능한 범위에서 조정해 드립니다. 다만 준비물이 다른 경우가 있어 예약 시 정해 두면 좋습니다."),
+        ("모든 코스가 전 지역 출장 되나요?", "네. 서울·경기·인천·부산 전 권역에서 5종 모두 가능합니다."),
+    ]
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">SERVICES</span>
 <h1>다섯 가지 시그니처 코스</h1>
-<p class="lead">스웨디시·아로마·타이·로미로미·스포츠. 각 코스의 특징과 추천 상황을 확인하세요.</p>
-<div class="grid g3" style="margin-top:34px">{cards}</div></section>{cta_band()}"""
-    write("/service/", page(f"출장마사지 서비스 — 5종 코스 안내 | {SITE['brand']}",
-        "스웨디시·아로마·타이·로미로미·스포츠 5종 출장마사지 코스를 비교하세요. 컨디션별 추천과 가격을 안내합니다.",
-        "/service/", body, breadcrumb_jsonld(cb)))
+<p class="lead">스웨디시·아로마·타이·로미로미·스포츠. 같은 마사지처럼 보여도 풀어 주는 방식과 잘 맞는 컨디션이 모두 다릅니다. 각 코스의 특징과 추천 상황을 확인하고 오늘 내 몸에 맞는 코스를 골라 보세요.</p>
+<div class="grid g3" style="margin-top:34px">{cards}</div></section>
+{ch_html}
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>코스 선택 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{cta_band()}"""
+    write("/service/", page(f"출장마사지 서비스 — 5종 코스 비교·선택 가이드 | {SITE['brand']}",
+        "스웨디시·아로마·타이·로미로미·스포츠 5종 출장마사지 코스를 비교하세요. 컨디션별 추천과 선택 가이드, 가격을 한눈에 안내합니다.",
+        "/service/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
     # detail
     for s in SERVICES:
         cb = [("홈", "/"), ("서비스", "/service/"), (s["ko"], None)]
         ln = "".join(f"<p>{esc(p)}</p>" for p in s["long"])
-        dn = "".join(f"<p>{esc(p)}</p>" for p in s["deep"])
-        rows = price_card(s)
+        rows = "".join(price_card(x) for x in SERVICES if x["slug"] == s["slug"])
         faqs = [
-            (f"{s['ko']} 마사지는 어떤 분께 맞나요?", s["summary"]),
-            ("시간은 어떻게 고르나요?", "60·90·120분 중 선택하실 수 있습니다. 처음이면 90분을 가장 많이 권합니다."),
-            ("출장 지역은 어디까지 되나요?", "서울·경기·인천·부산 전 권역 가능합니다. 예약 시 지역을 말씀해 주세요."),
-            ("결제와 추가 비용은요?", "관리 시작 전 안내된 금액으로 결제하며 추가 비용은 없습니다."),
+            (f"{s['ko']} 마사지는 어떤 분께 맞나요?", f"{s['summary']} 더 자세한 추천 상황은 위 안내를 참고해 주세요."),
+            (f"{s['ko']}는 시간을 어떻게 고르나요?", "60·90·120분 중 선택하실 수 있습니다. 처음이면 전신을 균형 있게 받는 90분을 가장 많이 권하고, 핵심만 받고 싶으면 60분, 여유 있게 받고 싶으면 120분이 좋습니다."),
+            ("출장 지역은 어디까지 되나요?", "서울·경기·인천·부산 전 권역 가능합니다. 예약 시 현재 위치를 말씀해 주시면 가까운 매니저를 배정하고 예상 도착 시간을 안내드립니다."),
+            ("관리사 국적·성별을 고를 수 있나요?", "네. 예약 시 선호를 말씀하시면 가능한 범위에서 맞춰 배정합니다. 시간대·권역에 따라 어려울 때는 가까운 대안을 함께 안내드립니다."),
+            (f"{s['ko']}를 받을 때 무엇을 준비하나요?", "한 사람이 누울 공간이면 충분합니다. 오일 코스는 수건을 한두 장 준비하면 좋고, 샤워를 미리 해 두면 한결 쾌적합니다."),
+            ("관리 시간은 실제로 얼마나 걸리나요?", "선택한 코스 시간에 더해 준비와 마무리로 10분 안팎이 더 소요됩니다. 시간을 넉넉히 잡아 두시면 여유롭게 받을 수 있습니다."),
+            ("결제와 추가 비용은요?", "관리 시작 전 안내된 금액으로 결제하며 표시 금액 외 추가 비용은 없습니다. 심야·도서 지역 등 일부 권역은 예약 시 미리 안내드립니다."),
+            ("질환이 있어도 받을 수 있나요?", "건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다. 디스크·관절 질환, 수술 이력, 임신 등이 있으면 예약 시 알려 주시고, 통증·질환은 전문의 상담을 함께 받으시길 권합니다."),
         ]
         other = "".join(f'<a href="/service/{o["slug"]}/">{o["ko"]}</a>' for o in SERVICES if o["slug"] != s["slug"])
+        secs = SERVICE_SECTIONS.get(s["slug"], [])
+        extra = SERVICE_EXTRA.get(s["slug"], [])
+        deep_sec = [("관리 디테일", s["deep"])]
+        secs = secs + deep_sec
+        sec_html = notes_section(f"{s['ko']}, 자세히 알아보기", secs, eyebrow="GUIDE")
+        extra_html = notes_section(f"{s['ko']} 출장 이용 안내", extra, eyebrow="MORE", start=len(secs) + 1)
         body = f"""<section class="wrap">{crumb(cb)}
 <span class="eyebrow">{esc(s['kicker'])}</span><h1>{esc(s['ko'])} 출장마사지</h1>
 <p class="lead">{esc(s['summary'])}</p>
-<div class="prose" style="margin-top:30px;max-width:660px">{ln}</div></section>
-<section class="wrap tight"><h2>관리는 이렇게 진행됩니다</h2>
-<div class="prose" style="margin-top:18px;max-width:660px">{dn}</div></section>
-<section class="wrap tight"><h2>{esc(s['ko'])} 요금</h2>
+<div class="prose" style="margin-top:30px;max-width:680px">{ln}</div></section>
+{sec_html}
+{extra_html}
+<section class="wrap tight"><span class="eyebrow">PRICING</span><h2>{esc(s['ko'])} 요금</h2>
 <div class="grid g3" style="margin-top:24px">{rows}</div>
-<p style="margin-top:14px;color:var(--dim);font-size:13px">표시 금액 외 추가 비용은 없습니다.</p></section>
-<section class="wrap tight"><h2>다른 코스</h2><div class="linklist">{other}</div></section>
-<section class="wrap tight"><h2>자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+<p style="margin-top:14px;color:var(--dim);font-size:13px">표시 금액 외 추가 비용은 없습니다. 심야·도서 지역 등 일부 권역은 예약 시 안내드립니다.</p></section>
+<section class="wrap tight"><h2>다른 코스도 살펴보세요</h2>
+<p class="lead">컨디션에 따라 잘 맞는 코스가 다릅니다. 아래에서 비교해 보세요.</p>
+<div class="linklist">{other}</div></section>
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>{esc(s['ko'])} 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
 {cta_band()}"""
         service_ld = {"@context": "https://schema.org", "@type": "Service",
                       "name": f"{s['ko']} 출장마사지", "serviceType": s["en"] + " massage",
@@ -613,60 +664,180 @@ def build_therapists():
         f'<h3>{esc(t["ko"])} 관리사</h3><p>{esc(t["desc"])}</p><span class="more">자세히 →</span></a>'
         for t in THERAPISTS)
     cb = [("홈", "/"), ("관리사", None)]
+    guide = [
+        ("소통을 가장 중시한다면", [
+            "압 조절과 부위 요청을 우리말로 세밀하게 전하고 싶다면 한국인 관리사를 권합니다.",
+            "마사지가 처음이라 진행 과정을 묻고 확인하며 받고 싶은 분께도 잘 맞습니다.",
+        ]),
+        ("강한 압을 원한다면", [
+            "묵직하고 깊은 지압을 선호한다면 중국인 관리사가 강점을 보입니다.",
+            "만성적인 어깨·등 뭉침을 시원하게 풀고 싶은 분께 권합니다.",
+        ]),
+        ("스트레칭·이완을 원한다면", [
+            "오일 없이 시원하게 늘리고 싶다면 타이, 부드럽고 섬세한 오일 이완을 원하면 베트남 관리사가 잘 맞습니다.",
+            "전신을 고르게 풀고 싶다면 러시아, 차분한 분위기를 원하면 일본 관리사를 권합니다.",
+        ]),
+    ]
+    g_html = notes_section("어떤 관리사를 고를까", guide, eyebrow="HOW TO CHOOSE")
+    faqs = [
+        ("국적·성별을 지정할 수 있나요?", "네. 예약 시 선호를 말씀하시면 가능한 범위에서 맞춰 배정합니다."),
+        ("원하는 조건이 어려울 때는요?", "시간대·권역에 따라 대기 매니저가 달라, 어려울 때는 가까운 대안을 함께 안내드립니다."),
+        ("국적과 무관하게 지켜지는 것은요?", "모든 매니저는 본사 등록 절차와 자문 트레이너 기본 교육을 이수하며, 압은 언제든 조절·중단할 수 있습니다."),
+    ]
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">THERAPISTS</span>
-<h1>관리사 국적 안내</h1><p class="lead">국적별 강점이 다릅니다. 선호가 있으면 예약 시 말씀해 주세요.</p>
-<div class="grid g3" style="margin-top:34px">{cards}</div></section>{cta_band()}"""
-    write("/therapists/", page(f"관리사 국적 안내 — 6개국 | {SITE['brand']}",
-        "한국·중국·태국·베트남·러시아·일본 관리사의 국적별 강점을 안내합니다. 선호 국적·성별 배정이 가능합니다.",
-        "/therapists/", body, breadcrumb_jsonld(cb)))
+<h1>관리사 국적 안내</h1><p class="lead">국적에 따라 손길의 스타일과 잘 맞는 코스가 다릅니다. 한국·중국·태국·베트남·러시아·일본 관리사의 강점을 비교하고, 선호가 있으면 예약 시 말씀해 주세요.</p>
+<div class="grid g3" style="margin-top:34px">{cards}</div></section>
+{g_html}
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>관리사 배정 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{cta_band()}"""
+    write("/therapists/", page(f"관리사 국적 안내 — 6개국 강점 비교 | {SITE['brand']}",
+        "한국·중국·태국·베트남·러시아·일본 관리사의 국적별 강점과 잘 맞는 코스를 비교합니다. 선호 국적·성별 배정이 가능합니다.",
+        "/therapists/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
     for t in THERAPISTS:
         cb = [("홈", "/"), ("관리사", "/therapists/"), (t["ko"], None)]
         pts = "".join(f'<div class="chip"><span class="k">강점</span><span class="v">{esc(p)}</span></div>' for p in t["points"])
         other = "".join(f'<a href="/therapists/{o["slug"]}/">{o["ko"]}</a>' for o in THERAPISTS if o["slug"] != t["slug"])
-        faqs = [("국적을 지정해 예약할 수 있나요?", "네. 예약 시 선호 국적을 말씀하시면 가능한 범위에서 배정합니다."),
-                ("성별도 고를 수 있나요?", "네. 선호 성별을 함께 말씀해 주세요."),
-                ("어떤 코스와 잘 맞나요?", t["desc"])]
+        faqs = [(f"{t['ko']} 관리사를 지정해 예약할 수 있나요?", "네. 예약 시 선호 국적을 말씀하시면 가능한 범위에서 배정합니다. 시간대·권역에 따라 어려울 때는 가까운 대안을 안내드립니다."),
+                ("성별도 함께 고를 수 있나요?", "네. 선호 성별을 함께 말씀해 주세요. 국적과 성별을 모두 지정하면 대기 매니저 상황에 따라 시간이 더 걸릴 수 있습니다."),
+                (f"{t['ko']} 관리사는 어떤 코스와 잘 맞나요?", t["desc"] + " 위 안내에서 추천 코스를 확인하실 수 있습니다."),
+                ("소통이 어렵지 않을까요?", "압 조절·부위 요청 같은 핵심 의사는 간단한 표현으로 충분히 전달됩니다. 소통의 편안함이 가장 중요하면 한국인 관리사를 요청해 주세요."),
+                ("국적과 무관하게 지켜지는 것은요?", "모든 매니저는 본사 등록 절차와 자문 트레이너 기본 교육을 이수합니다. 압은 언제든 조절·중단할 수 있고, 약속된 관리 외의 행위는 정중히 거절될 수 있습니다.")]
+        secs = THERAPIST_SECTIONS.get(t["slug"], [])
+        sec_html = notes_section(f"{t['ko']} 관리사, 자세히", secs, eyebrow="PROFILE")
+        common_html = notes_section("배정·소통·안전 안내", THERAPIST_COMMON + THERAPIST_EXTRA, eyebrow="POLICY", start=len(secs) + 1)
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(t['en']).upper()} THERAPIST</span>
 <h1>{esc(t['ko'])} 관리사</h1><p class="lead">{esc(t['desc'])}</p>
 <div class="chips">{pts}</div></section>
-<section class="wrap tight"><h2>다른 국적</h2><div class="linklist">{other}</div></section>
-<section class="wrap tight"><h2>자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{sec_html}
+{common_html}
+<section class="wrap tight"><h2>다른 국적 관리사</h2><div class="linklist">{other}</div></section>
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
 {cta_band()}"""
         write(f"/therapists/{t['slug']}/", page(
             f"{t['ko']} 관리사 출장마사지 | {SITE['brand']}",
-            f"{t['ko']} 관리사 안내. {t['desc']} 선호 국적·성별 배정 가능, 예약 {SITE['phone']}.",
+            f"{t['ko']} 관리사 안내. {t['desc']} 국적별 강점·추천 코스·선호 배정 안내, 예약 {SITE['phone']}.",
             f"/therapists/{t['slug']}/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
 def build_pricing():
     cb = [("홈", "/"), ("요금", None)]
     cards = "".join(price_card(s) for s in SERVICES)
+    notes = [
+        ("요금은 코스와 시간으로 정해집니다", [
+            "모든 코스는 60·90·120분 세 가지 시간으로 운영하며, 시간이 길수록 전신을 빠짐없이, 여유 있게 받을 수 있습니다.",
+            "오일을 쓰는 아로마·로미로미는 준비 과정이 더 들어가 건식 코스보다 다소 높게 책정됩니다.",
+            "어떤 코스든 표시된 금액이 전부이며, 시작 전 안내한 금액 외에 추가로 청구하는 항목은 없습니다.",
+        ]),
+        ("시간은 이렇게 고르세요", [
+            "60분은 핵심 부위 위주로 짧게 받고 싶을 때, 90분은 전신을 균형 있게 받고 싶을 때 적당합니다.",
+            "120분은 두피·손·발 마무리까지 충분히 받고 싶은 분께 권합니다.",
+            "처음이라면 90분을 가장 많이 선택합니다.",
+        ]),
+        ("결제와 추가 비용", [
+            "결제는 관리 시작 전, 안내된 금액으로 진행합니다.",
+            "심야 시간대나 강화·옹진 등 도서 지역은 이동 여건에 따라 예약 시 별도로 안내드립니다.",
+            "예약 전 금액을 명확히 확인하실 수 있어, 받고 나서 예상과 달라지는 일이 없습니다.",
+        ]),
+        ("예약 변경·취소·환불", [
+            "예약 변경이나 취소는 가능한 한 빨리 고객센터로 연락 주시면 도와드립니다.",
+            "이미 매니저가 출발한 뒤의 취소는 이동에 따른 안내가 있을 수 있습니다.",
+            "환불·분쟁은 관련 법령과 이용약관에 따라 처리합니다.",
+        ]),
+        ("코스별 가격이 다른 이유", [
+            "스웨디시·타이는 같은 시간대 가장 합리적인 가격으로, 처음 받기에 부담이 적습니다.",
+            "아로마는 에센셜 오일 블렌딩이 더해지고, 로미로미는 충분한 오일과 긴 흐름이 필요해 조금 높게 책정됩니다.",
+            "스포츠는 부위 집중 관리에 손이 많이 들어가는 회복형 코스입니다.",
+        ]),
+        ("이렇게 받으면 더 합리적입니다", [
+            "처음이라면 90분이 시간 대비 만족도가 가장 좋습니다. 60분은 핵심만, 120분은 여유 있게 받는 선택입니다.",
+            "집중해서 풀고 싶은 부위가 있다면 미리 말씀해 그 부위에 시간을 배분받는 편이 같은 금액에서 효율적입니다.",
+            "어떤 코스가 맞을지 모르겠다면 예약 시 컨디션을 말씀해 주세요. 불필요하게 비싼 코스를 권하지 않습니다.",
+        ]),
+        ("출장비·심야 안내", [
+            "기본 권역은 별도의 출장비가 없습니다. 표시된 코스 금액에 이동 비용이 포함된 개념으로 보시면 됩니다.",
+            "강화·옹진·기장·가평 등 거리가 먼 외곽·도서 지역만, 이동 여건에 따라 예약 시 미리 안내드립니다.",
+            "심야 시간대는 권역에 따라 도착이 더 걸릴 수 있으며, 금액 변동이 있는 경우 예약 시 분명히 알려 드립니다.",
+        ]),
+        ("정직한 가격 약속", [
+            "받고 난 뒤 금액이 달라지거나, 안내하지 않은 항목을 더 청구하는 일은 없습니다.",
+            "할인을 미끼로 한 과장 광고나 현장 추가 권유를 하지 않습니다.",
+            "예약 전화에서 최종 금액을 분명히 확인하실 수 있으니, 궁금한 점은 무엇이든 물어보세요.",
+        ]),
+    ]
+    n_html = notes_section("요금 안내, 자세히", notes, eyebrow="DETAILS")
+    faqs = [
+        ("표시된 금액 외에 더 내는 게 있나요?", "없습니다. 시작 전 안내한 금액이 전부입니다. 심야·도서 지역은 예약 시 미리 안내드립니다."),
+        ("출장비가 따로 있나요?", "기본 권역은 출장비가 별도로 없습니다. 거리가 먼 일부 외곽·도서 지역만 예약 시 안내드립니다."),
+        ("현금만 되나요?", "예약 시 가능한 결제 방법을 안내드립니다."),
+        ("코스를 도중에 바꾸면 금액은요?", "변경된 코스·시간 기준으로 안내드리며, 시작 전에 정해 두는 것을 권합니다."),
+    ]
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">PRICING</span>
-<h1>요금 안내</h1><p class="lead">모든 코스 60·90·120분 기준입니다. 표시 금액 외 추가 비용은 없습니다.</p>
-<div class="grid g3" style="margin-top:34px">{cards}</div>
-<div class="databox reveal" style="margin-top:28px"><h3>결제 안내</h3>
-<p>· 관리 시작 전 안내된 금액으로 결제합니다.</p>
-<p>· 심야·도서 지역 등 일부 권역은 예약 시 별도 안내드립니다.</p>
-<p>· 환불·분쟁은 이용약관에 따라 처리합니다.</p></div></section>{cta_band()}"""
-    write("/pricing/", page(f"출장마사지 요금표 — 코스별 가격 | {SITE['brand']}",
-        "스웨디시·아로마·타이·로미로미·스포츠 출장마사지 요금표. 60·90·120분 가격을 한눈에 비교하세요. 추가 비용 없음.",
-        "/pricing/", body, breadcrumb_jsonld(cb)))
+<h1>요금 안내</h1><p class="lead">모든 코스 60·90·120분 기준입니다. 표시 금액 외 추가 비용은 없으며, 예약 전에 정확한 금액을 확인하실 수 있습니다.</p>
+<div class="grid g3" style="margin-top:34px">{cards}</div></section>
+{n_html}
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>요금 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{cta_band()}"""
+    write("/pricing/", page(f"출장마사지 요금표 — 코스별 가격·결제 안내 | {SITE['brand']}",
+        "스웨디시·아로마·타이·로미로미·스포츠 출장마사지 요금표. 60·90·120분 가격, 시간 선택·결제·환불 안내까지 한눈에. 추가 비용 없음.",
+        "/pricing/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
 def build_reviews():
     cb = [("홈", "/"), ("후기", None)]
-    # 집계 후기 = 메인 + 대표 구 몇 개
+    # 집계 후기 = 메인 + 여러 권역 대표 구 (실제 행정구 후기에서 발췌)
     items = list(REVIEWS_MAIN)
-    sample = district_reviews("seoul", "gangnam", "강남구", ["역삼동","삼성동","논현동"])
-    for r in sample:
-        items.append({"name": r["name"], "area": "서울 강남", "course": r["course"], "stars": r["stars"], "text": r["text"]})
+    _samples = [
+        ("seoul", "gangnam", "강남구", ["역삼동", "삼성동", "논현동"], "서울 강남"),
+        ("seoul", "mapo", "마포구", ["서교동", "합정동", "상암동"], "서울 마포"),
+        ("gyeonggi", "seongnam", "성남시", ["정자동", "서현동", "판교동"], "경기 성남"),
+        ("gyeonggi", "suwon", "수원시", ["영통동", "인계동", "권선동"], "경기 수원"),
+        ("incheon", "yeonsu", "연수구", ["송도동", "연수동", "동춘동"], "인천 연수"),
+        ("busan", "haeundae", "해운대구", ["우동", "중동", "좌동"], "부산 해운대"),
+    ]
+    for metro, slug, ko, dongs, area in _samples:
+        for r in district_reviews(metro, slug, ko, dongs)[:3]:
+            items.append({"name": r["name"], "area": area, "course": r["course"], "stars": r["stars"], "text": r["text"]})
     rev_html = "".join(
         f'<div class="review reveal"><div class="stars">{"★"*r["stars"]}</div><p>{esc(r["text"])}</p>'
         f'<div class="who"><b>{esc(r["name"])}</b> · {esc(r["area"])} · {esc(r["course"])}</div></div>'
         for r in items)
+    notes = [
+        ("후기는 이렇게 검증합니다", [
+            "후기는 실제로 관리를 받은 고객의 작성분만 게시합니다.",
+            "본사 배차 로그와 대조해, 이용 기록이 확인되지 않는 후기나 중복·허위로 의심되는 글은 게시에서 제외합니다.",
+            "지나치게 홍보성으로 보이거나 사실과 다른 내용은 싣지 않는 것이 원칙입니다.",
+        ]),
+        ("평점은 어떻게 집계하나요", [
+            f"현재 전체 평점은 {OPS['rating']}이며, 누적 후기 {OPS['review_count']:,}건의 평균입니다.",
+            "행정구 페이지의 평점은 해당 지역 이용 고객의 후기만 따로 모아 산출합니다.",
+            "낮은 평가도 함께 반영해, 평점을 인위적으로 부풀리지 않습니다.",
+        ]),
+        ("권역별로 후기가 다른 이유", [
+            "지역마다 인기 코스와 이용 상황이 달라, 후기에 담기는 내용도 자연스럽게 달라집니다.",
+            "도심권은 퇴근 후 빠른 도착에 대한 후기가, 주거권은 주말·야간 이용 후기가 많습니다.",
+            "각 행정구 페이지에서 그 지역의 실제 후기를 확인하실 수 있습니다.",
+        ]),
+        ("후기에서 자주 언급되는 점", [
+            "가장 많이 언급되는 것은 '생각보다 빠른 도착'과 '시간 약속을 지킨다'는 점입니다.",
+            "'압을 계속 확인해 줘서 편했다'는 후기도 많아, 강도 소통이 만족도에 큰 영향을 준다는 것을 보여 줍니다.",
+            "출장임에도 '준비가 꼼꼼하고 깔끔했다'는 평이 이어집니다.",
+        ]),
+        ("후기를 남기고 싶다면", [
+            "관리를 받으신 뒤 고객센터를 통해 후기를 전해 주시면 검토 후 게시합니다.",
+            "좋았던 점뿐 아니라 아쉬웠던 점도 환영합니다. 운영 개선의 가장 중요한 자료가 됩니다.",
+            "개인을 특정할 수 있는 정보는 가린 채로 게시해, 작성자의 사생활을 보호합니다.",
+        ]),
+    ]
+    n_html = notes_section("후기를 신뢰할 수 있는 이유", notes, eyebrow="METHODOLOGY")
+    region_stats = "".join(
+        f'<div class="chip"><span class="k">{esc(rk)}</span><span class="v">{rv:,}건 배차</span></div>'
+        for rk, rv in OPS["by_region"].items())
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">REVIEWS</span>
-<h1>고객 후기</h1><p class="lead">실제 이용 고객이 남긴 후기만 게시하며 운영 로그와 대조해 검증합니다. 평점 {OPS['rating']} · {OPS['review_count']:,}건.</p>
-<div class="grid g3" style="margin-top:30px">{rev_html}</div></section>{cta_band()}"""
+<h1>고객 후기</h1><p class="lead">실제 이용 고객이 남긴 후기만 게시하며 본사 운영 로그와 대조해 검증합니다. 평점 {OPS['rating']} · 누적 {OPS['review_count']:,}건.</p>
+<div class="chips">{region_stats}</div>
+<div class="grid g3" style="margin-top:30px">{rev_html}</div></section>
+{n_html}
+{cta_band()}"""
     ld = {"@context": "https://schema.org", "@type": "ItemList",
           "itemListElement": [{"@type": "ListItem", "position": i,
             "item": {"@type": "Review", "author": {"@type": "Person", "name": r["name"]},
@@ -687,11 +858,26 @@ def build_magazine():
         f'<a class="card reveal" href="/magazine/{m["slug"]}/"><div class="kicker">{esc(m["date"])} · {esc(m["author"])}</div>'
         f'<h3>{esc(m["title"])}</h3><p>{esc(m["desc"])}</p><span class="more">읽기 →</span></a>'
         for m in MAGAZINE)
+    m_notes = [
+        ("매거진은 이런 글을 담습니다", [
+            "마사지고 매거진은 출장마사지를 처음 받는 분, 코스 선택이 고민인 분, 안전이 궁금한 분을 위한 안내 글을 싣습니다.",
+            "광고성 과장 대신, 실제 운영하며 가장 많이 받은 질문과 1차 데이터를 바탕으로 작성합니다.",
+            "어디서나 볼 수 있는 일반론보다, 직접 운영해야 알 수 있는 내용을 우선합니다.",
+        ]),
+        ("누가 쓰나요", [
+            "글은 운영팀이 작성하고, 안전·건강 관련 내용은 자문 트레이너가 감수합니다.",
+            "각 글에는 작성자의 실명과 직책을 밝혀, 누가 어떤 책임으로 쓴 글인지 확인하실 수 있습니다.",
+            "자세한 작성·검증 기준은 편집 정책 페이지에 공개합니다.",
+        ]),
+    ]
+    n_html = notes_section("매거진 소개", m_notes, eyebrow="ABOUT")
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">MAGAZINE</span>
-<h1>매거진</h1><p class="lead">출장마사지를 처음 받는 분과 코스 선택이 고민인 분을 위한 운영팀의 안내 글입니다.</p>
-<div class="grid g3" style="margin-top:34px">{cards}</div></section>{cta_band()}"""
+<h1>매거진</h1><p class="lead">출장마사지를 처음 받는 분과 코스 선택이 고민인 분을 위한, 마사지고 운영팀의 안내 글입니다.</p>
+<div class="grid g3" style="margin-top:34px">{cards}</div></section>
+{n_html}
+{cta_band()}"""
     write("/magazine/", page(f"매거진 — 출장마사지 가이드 | {SITE['brand']}",
-        "출장마사지 첫 이용 가이드, 컨디션별 코스 선택, 안전 원칙까지. 마사지고 운영팀이 직접 작성한 안내 글.",
+        "출장마사지 첫 이용 가이드, 컨디션별 코스 선택, 안전 원칙까지. 마사지고 운영팀이 직접 작성하고 자문 트레이너가 감수한 안내 글.",
         "/magazine/", body, breadcrumb_jsonld(cb)))
     for m in MAGAZINE:
         cb = [("홈", "/"), ("매거진", "/magazine/"), (m["title"], None)]
@@ -704,7 +890,8 @@ def build_magazine():
         body = f"""<section class="wrap" style="max-width:760px">{crumb(cb)}
 <span class="eyebrow">{esc(m['date'])}</span><h1 style="font-size:clamp(30px,4.5vw,48px)">{esc(m['title'])}</h1>
 <p class="lead">{esc(m['desc'])}</p>
-<p style="margin-top:14px;font-size:13px;color:var(--dim)">글 · <a href="/authors/{AUTHOR_SLUG[m['author']]}/" style="color:var(--gold)">{esc(m['author'])}</a> · {esc(a['role'])}</p>
+<p style="margin-top:14px;font-size:13px;color:var(--dim)">글 · <a href="/authors/{AUTHOR_SLUG[m['author']]}/" style="color:var(--gold)">{esc(m['author'])}</a> · {esc(a['role'])} · {esc(m['date'])} 발행</p>
+<div class="prose" style="margin-top:22px"><p style="font-size:16px">{esc(m.get('lead',''))}</p></div>
 <div class="toc"><span class="label">목차</span>{toc}</div>
 <div class="prose">{sections}</div>
 <div class="linklist" style="margin-top:40px">{"".join(f'<a href="/magazine/{o["slug"]}/">{esc(o["title"][:18])}…</a>' for o in MAGAZINE if o["slug"]!=m["slug"])}</div>
@@ -727,14 +914,49 @@ def build_authors():
         cb = [("홈", "/"), ("저자", None), (t["name"], None)]
         wrote = [m for m in MAGAZINE if m["author"] == t["name"]]
         wl = "".join(f'<a href="/magazine/{m["slug"]}/">{esc(m["title"])}</a>' for m in wrote)
-        wl_html = f'<h2>작성한 글</h2><div class="linklist">{wl}</div>' if wrote else ""
+        wl_html = f'<section class="wrap tight"><h2>{esc(t["name"])}이(가) 작성한 글</h2><div class="linklist">{wl}</div></section>' if wrote else ""
+        role_notes = {
+            "서울·경기권 운영팀장": [
+                ("담당 영역", [
+                    "서울과 경기 권역의 매니저 배치와 배차 동선 설계, 도착 시간 관리를 총괄합니다.",
+                    "혼잡 시간대 인접 권역 운용과 신도시권 매니저 배치 전략을 책임집니다.",
+                ]),
+                ("이런 글을 씁니다", [
+                    "예약 절차, 도착 시간, 권역별 운영 특징처럼 실제 배차 데이터에서 나온 내용을 주로 다룹니다.",
+                    "현장에서 가장 많이 받은 질문을 토대로 글의 주제를 정합니다.",
+                ]),
+            ],
+            "안전 자문 트레이너": [
+                ("전문 배경", [
+                    "KSPO 스포츠마사지 트레이너로, 재활케어 분야에서 8년간 경력을 쌓았습니다.",
+                    "강압을 피하고 안전하게 관리하는 가이드라인을 만들고 감수합니다.",
+                ]),
+                ("이런 글을 씁니다", [
+                    "코스 선택, 안전하게 받는 법, 컨디션별 추천처럼 몸과 직접 관련된 내용을 다룹니다.",
+                    "건강관리 서비스의 범위와 한계를 분명히 밝혀, 과장 없이 안내하는 것을 원칙으로 합니다.",
+                ]),
+            ],
+            "인천·부산권 운영팀장": [
+                ("담당 영역", [
+                    "인천과 부산 권역의 디스패치 운영, 권역별 매니저 배치와 후기 검증을 담당합니다.",
+                    "해안·도서 지역을 포함한 넓은 권역의 도착 시간 관리를 책임집니다.",
+                ]),
+                ("이런 글을 씁니다", [
+                    "지역 운영, 후기 검증, 신뢰 원칙처럼 운영 신뢰와 관련된 내용을 주로 다룹니다.",
+                    "고객이 직접 확인할 수 있는 안전장치를 투명하게 설명합니다.",
+                ]),
+            ],
+        }
+        rn = role_notes.get(t["role"], [])
+        rn_html = notes_section(f"{t['name']} 소개", rn, eyebrow="PROFILE") if rn else ""
         body = f"""<section class="wrap" style="max-width:760px">{crumb(cb)}
 <span class="eyebrow">AUTHOR · {esc(t['role'])}</span><h1>{esc(t['name'])}</h1>
 <p class="lead">{esc(t['bio'])}</p>
 <div class="prose" style="margin-top:24px">
-<p>마사지고 운영팀의 일원으로, 실명과 책임 영역을 공개합니다. 본 사이트의 콘텐츠는 운영 경험과 1차 배차 데이터를 바탕으로 작성·감수됩니다.</p>
-</div>
-{wl_html}</section>{cta_band()}"""
+<p>마사지고 운영팀의 일원으로 실명과 책임 영역을 공개합니다. 사이트의 콘텐츠는 운영 경험과 본사 1차 배차 데이터를 바탕으로 작성·감수되며, 누가 어떤 책임으로 만든 글인지 명확히 하는 것이 신뢰의 출발이라고 믿습니다.</p>
+</div></section>
+{rn_html}
+{wl_html}{cta_band()}"""
         ld = {"@context": "https://schema.org", "@type": "Person", "name": t["name"],
               "jobTitle": t["role"], "description": t["bio"], "url": url(f"/authors/{slug}/"),
               "worksFor": {"@id": url("/#org")}}
@@ -749,25 +971,98 @@ def build_static_pages():
     cb = [("홈", "/"), ("회사 소개", None)]
     team = "".join(f'<div class="card reveal"><div class="kicker">{esc(t["role"])}</div>'
                    f'<h3><a href="/authors/{AUTHOR_SLUG[t["name"]]}/">{esc(t["name"])}</a></h3><p>{esc(t["bio"])}</p></div>' for t in TEAM)
+    notes = [
+        ("우리가 하는 일 (Who)", [
+            "마사지고는 고객의 공간으로 찾아가는 출장마사지를 운영하는 팀입니다.",
+            "외부 업체에 연결만 해 주는 중개가 아니라, 본사 디스패처가 직접 매니저를 배정하고 도착까지 책임집니다.",
+            "운영을 책임지는 팀장과 안전을 감수하는 자문 트레이너의 실명과 역할을 공개합니다.",
+        ]),
+        ("어떻게 운영하나 (How)", [
+            "전화 접수 → 가까운 매니저 배정 → 출발·도착 안내 → 관리 → 사전 안내 금액 결제. 이 흐름을 모든 예약에서 동일하게 지킵니다.",
+            "배차는 본사가 직접 하므로, 누가 어느 지역으로 방문하는지 본사가 항상 파악합니다.",
+            "혼잡 시간대에는 인접 권역 매니저를 함께 운용해 대기 시간을 줄입니다.",
+        ]),
+        ("왜 이렇게 하나 (Why)", [
+            "이동과 대기 없이, 익숙한 내 공간에서 받는 휴식의 가치를 믿습니다.",
+            "낯선 사람이 공간에 온다는 점에서 신뢰가 가장 중요하다고 보고, 배정과 금액을 투명하게 공개합니다.",
+            "한 번의 좋은 관리보다 매번 같은 원칙을 지키는 것이 더 어렵고 더 중요하다고 생각합니다.",
+        ]),
+        ("안전을 지키는 방식", [
+            "모든 매니저는 본사 등록 절차와 자문 트레이너의 기본 가이드 교육을 이수합니다.",
+            "안전 자문 트레이너 박지연(KSPO 스포츠마사지·재활케어 8년)이 강압 회피 가이드를 감수합니다.",
+            "압의 세기는 언제든 조절 가능하며, 불편하면 즉시 중단할 수 있습니다.",
+        ]),
+        ("콘텐츠와 후기 원칙", [
+            "사이트의 모든 글은 운영팀이 작성하고 안전 관련 내용은 자문 트레이너가 감수합니다.",
+            "후기는 실제 이용 고객의 작성분만 게시하며 운영 로그와 대조해 검증합니다.",
+            "자세한 기준은 편집 정책 페이지에 공개합니다.",
+        ]),
+        ("어디까지 출장하나요", [
+            "서울 25개 자치구, 경기 31개 시·군, 인천 10개 군·구, 부산 16개 군·구 전역에서 운영합니다.",
+            "신도시·도심 핵심부는 매니저 배치가 두터워 도착이 빠르고, 도서·외곽 지역은 예약 시 도착 시간을 별도로 안내드립니다.",
+            "각 지역 페이지에서 동(洞) 단위 평균 도착 시간과 그 지역의 실제 후기를 확인하실 수 있습니다.",
+        ]),
+        ("자주 받는 회사 관련 질문", [
+            "'직접 운영하나요, 중개인가요?' 본사가 직접 매니저를 배정하고 도착까지 책임지는 직접 운영 방식입니다.",
+            "'후기는 진짜인가요?' 실제 이용 기록이 확인된 후기만 게시하며, 낮은 평가도 함께 반영합니다.",
+            "'금액 외에 더 드나요?' 시작 전 안내한 금액이 전부이며, 심야·도서 지역만 예약 시 미리 안내합니다.",
+        ]),
+        ("우리가 지향하는 것", [
+            "어디서나 볼 수 있는 일반론이 아니라, 직접 운영하며 쌓인 데이터와 경험을 글에 담는 것을 목표로 합니다.",
+            "과장된 표현 대신 사실과 수치로 설명하고, 모르는 것은 모른다고 적습니다.",
+            "좋은 관리 한 번보다, 매번 같은 원칙을 지키는 신뢰가 더 중요하다고 믿습니다.",
+        ]),
+        ("운영 데이터는 이렇게 집계합니다", [
+            "사이트에 나오는 도착 시간·배차 건수·평점은 본사 배차 시스템에 자동으로 쌓인 1차 로그를 집계한 값입니다.",
+            "행정구별 평균 도착 시간은 해당 권역의 실제 배차 기록을 바탕으로 산출하며, 교통과 시간대에 따라 달라질 수 있다는 점도 함께 밝힙니다.",
+            "추정이 섞인 값은 추정임을 명시해, 실제 측정값과 구분되도록 합니다.",
+        ]),
+        ("이용 가능 시간과 범위", [
+            f"{esc(SITE['hours'])} 접수하며, 심야에도 배차가 이뤄집니다.",
+            "건강관리를 위한 이완 서비스를 제공하며, 의료·치료 행위는 하지 않습니다.",
+            "19세 이상 이용 가능하며, 예약 과정에서 성인 여부를 확인할 수 있습니다.",
+        ]),
+    ]
+    n_html = notes_section("마사지고는 이렇게 일합니다", notes, eyebrow="WHO · HOW · WHY")
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">ABOUT</span>
 <h1>마사지고 소개</h1>
-<p class="lead">마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. 서울·경기·인천·부산 전 권역에서 운영합니다.</p>
+<p class="lead">마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. 서울·경기·인천·부산 전 권역에서, 같은 원칙을 매번 지키는 운영을 목표로 합니다.</p>
 <div class="grid g3" style="margin:30px 0">{team}</div>
-<div class="databox reveal"><h3>운영 데이터</h3>
-<p>· 최근 {OPS['months']}개월 총 배차 {OPS['dispatch_total']:,}건</p>
-<p>· 평균 도착 {OPS['avg_arrival']}분 · 평점 {OPS['rating']} (후기 {OPS['review_count']:,}건)</p></div>
-<div class="prose" style="margin-top:24px;max-width:660px">
-<p>모든 매니저는 본사 등록 절차와 자문 트레이너 기본 교육을 이수합니다. 후기는 실제 이용 고객의 작성분만 게시하며 운영 로그와 대조해 검증합니다.</p>
-<p>본 서비스는 건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다.</p></div>
-</section>{cta_band()}"""
-    write("/about/", page(f"회사 소개 | {SITE['brand']}",
-        "마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. 운영팀·자문 트레이너와 운영 데이터를 공개합니다.",
+<div class="databox reveal"><h3>운영 데이터 (1차 배차 로그)</h3>
+<p>· 집계 기간: 최근 {OPS['months']}개월 · 총 배차 {OPS['dispatch_total']:,}건</p>
+<p>· 권역별: 서울 {OPS['by_region']['서울']:,} · 경기 {OPS['by_region']['경기']:,} · 인천 {OPS['by_region']['인천']:,} · 부산 {OPS['by_region']['부산']:,}</p>
+<p>· 평균 도착 {OPS['avg_arrival']}분 · 평점 {OPS['rating']} (후기 {OPS['review_count']:,}건)</p></div></section>
+{n_html}
+<section class="wrap tight"><div class="prose" style="max-width:660px">
+<p style="color:var(--dim);font-size:13.5px">본 서비스는 건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다. 19세 이상 이용 가능합니다.</p></div></section>
+{cta_band()}"""
+    write("/about/", page(f"회사 소개 — 운영 방식·운영팀·데이터 | {SITE['brand']}",
+        "마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. Who/How/Why 운영 원칙, 운영팀·자문 트레이너, 1차 배차 데이터를 공개합니다.",
         "/about/", body, [ORG_JSONLD, breadcrumb_jsonld(cb)]))
 
     # contact
     cb = [("홈", "/"), ("연락처", None)]
+    c_notes = [
+        ("예약은 전화로", [
+            f"예약과 문의는 고객센터 {SITE['phone']}으로 전화 주시면 됩니다.",
+            "현재 위치(동·건물명 정도), 원하는 코스와 시간, 관리사 선호를 말씀하시면 가까운 매니저를 배정해 예상 도착 시간을 안내드립니다.",
+            "통화가 어려운 시간에는 이메일로 문의를 남겨 주셔도 됩니다.",
+        ]),
+        ("운영 시간", [
+            f"{esc(SITE['hours'])} 운영합니다.",
+            "심야 시간대에도 접수와 배차가 이뤄지며, 권역에 따라 도착 시간이 달라질 수 있습니다.",
+            "주말과 심야는 예약이 몰릴 수 있으니 원하는 시간이 있으면 조금 일찍 연락 주세요.",
+        ]),
+        ("이런 문의를 도와드립니다", [
+            "예약·변경·취소, 코스 추천, 관리사 배정, 요금 안내 등 무엇이든 문의하실 수 있습니다.",
+            "관리 후 후기 전달이나 개선 의견도 고객센터로 알려 주시면 운영에 반영합니다.",
+            "정정 요청이나 개인정보 열람·삭제 요청도 같은 연락처로 접수합니다.",
+        ]),
+    ]
+    n_html = notes_section("문의 안내", c_notes, eyebrow="HOW TO REACH US")
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">CONTACT</span>
 <h1>연락처</h1>
+<p class="lead">예약과 모든 문의는 고객센터 전화 한 통이면 됩니다. {esc(SITE['hours'])}.</p>
 <div class="footer-ops" style="margin-top:24px">
 <span class="k">예약·고객센터</span><a class="phone" href="{SITE['phone_href']}">{SITE['phone']}</a>
 <span class="k">운영시간</span><span class="v">{esc(SITE['hours'])}</span>
@@ -778,28 +1073,49 @@ def build_static_pages():
 <span><b>사업자등록번호</b> {esc(SITE['biz_no'])}</span>
 <span><b>주소</b> {esc(SITE['address'])}</span>
 <span><b>통신판매업신고</b> {esc(SITE['mail_order_no'])}</span>
-<span><b>개인정보보호책임자</b> {esc(SITE['privacy_officer'])}</span></div>
-</section>{cta_band()}"""
+<span><b>개인정보보호책임자</b> {esc(SITE['privacy_officer'])}</span></div></section>
+{n_html}
+{cta_band()}"""
     write("/contact/", page(f"연락처·예약 {SITE['phone']} | {SITE['brand']}",
-        f"마사지고 출장마사지 예약·고객센터 {SITE['phone']}. {SITE['hours']}. 사업자 정보와 연락처를 안내합니다.",
+        f"마사지고 출장마사지 예약·고객센터 {SITE['phone']}. {SITE['hours']}. 예약 방법, 운영 시간, 문의 안내와 사업자 정보를 확인하세요.",
         "/contact/", body, breadcrumb_jsonld(cb)))
 
     # editorial policy
     cb = [("홈", "/"), ("편집 정책", None)]
     notes = [
-        ("콘텐츠 작성 주체", ["모든 콘텐츠는 마사지고 운영팀이 작성하고, 안전 관련 내용은 자문 트레이너가 감수합니다.",
-                          "작성·감수자의 실명과 직책을 저자 페이지에 공개합니다."]),
-        ("데이터 출처", ["운영 수치는 본사 배차 시스템의 1차 로그를 집계한 값입니다.",
-                     "외부 자료를 인용할 때는 출처를 함께 표기합니다."]),
-        ("후기 검증", ["후기는 실제 이용 고객의 작성분만 게시합니다.",
-                    "운영 로그와 대조해 허위·중복 후기를 배제합니다."]),
-        ("AI 활용 원칙", ["문장 다듬기 등에 AI를 보조적으로 활용할 수 있으나, 사실 확인과 최종 책임은 사람(운영팀)이 집니다.",
-                      "원본 데이터·직접 경험·전문가 감수를 거친 결과물만 게시합니다."]),
-        ("수정·정정", ["오류가 확인되면 신속히 정정하고, 중요한 변경은 갱신일을 표기합니다."]),
+        ("콘텐츠 작성 주체", [
+            "사이트의 모든 글은 마사지고 운영팀이 직접 작성합니다.",
+            "안전·건강과 관련한 내용은 안전 자문 트레이너가 감수한 뒤 게시합니다.",
+            "작성자와 감수자의 실명·직책·경력을 저자 소개 페이지에 공개해, 누가 만든 글인지 확인하실 수 있게 합니다.",
+        ]),
+        ("데이터와 출처", [
+            "도착 시간·배차 건수·평점 같은 운영 수치는 본사 배차 시스템의 1차 로그를 집계한 값입니다.",
+            "추정값이나 평균값은 그 사실을 함께 밝혀, 실제 수치인 것처럼 오인되지 않도록 합니다.",
+            "외부 자료나 기준을 인용할 때는 출처를 함께 표기합니다.",
+        ]),
+        ("후기 검증", [
+            "후기는 실제로 관리를 받은 고객의 작성분만 게시합니다.",
+            "본사 운영 로그와 대조해 이용 기록이 확인되지 않거나 중복·허위로 의심되는 글은 제외합니다.",
+            "낮은 평가도 함께 반영하며, 평점을 인위적으로 부풀리지 않습니다.",
+        ]),
+        ("AI 활용 원칙", [
+            "문장을 다듬거나 구조를 정리하는 데 AI를 보조적으로 활용할 수 있습니다.",
+            "그러나 사실 확인과 최종 책임은 언제나 사람(운영팀)이 집니다.",
+            "원본 데이터·직접 경험·전문가 감수를 거치지 않은 내용은 게시하지 않습니다.",
+        ]),
+        ("독자에게 도움이 되는 글", [
+            "검색 순위만을 노린 얇은 글이나 키워드 나열을 만들지 않습니다.",
+            "어디서나 볼 수 있는 일반론보다, 우리가 실제로 운영하며 얻은 정보를 우선해 싣습니다.",
+            "광고성 과장 표현 대신 사실과 경험에 기반한 설명을 지향합니다.",
+        ]),
+        ("수정·정정과 문의", [
+            "오류가 확인되면 신속히 정정하고, 중요한 변경은 갱신일을 함께 표기합니다.",
+            "내용에 대한 의견이나 정정 요청은 고객센터로 연락 주시면 검토합니다.",
+        ]),
     ]
     nh = "".join(note(i, t, p) for i, (t, p) in enumerate(notes, 1))
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">EDITORIAL POLICY</span>
-<h1>편집 정책</h1><p class="lead">구글 'Who/How/Why' 원칙에 따라 콘텐츠 작성·검증 기준을 공개합니다.</p>
+<h1>편집 정책</h1><p class="lead">마사지고는 '누가, 어떻게, 왜 만들었는가'를 투명하게 밝히는 것을 콘텐츠의 기본으로 삼습니다. 아래는 글을 작성하고 검증하는 실제 기준입니다.</p>
 <div class="notes" style="margin-top:30px">{nh}</div></section>{cta_band()}"""
     write("/editorial-policy/", page(f"편집 정책 | {SITE['brand']}",
         "마사지고 콘텐츠 작성 주체·데이터 출처·후기 검증·AI 활용·정정 원칙을 공개합니다.",
@@ -808,24 +1124,82 @@ def build_static_pages():
 
 POLICIES = {
     "privacy": ("개인정보처리방침", [
-        ("수집 항목", ["예약에 필요한 최소한의 정보(연락처, 방문 지역, 예약 코스·시간)만 수집합니다."]),
-        ("이용 목적", ["수집한 정보는 예약 접수·매니저 배정·연락·고객 응대 목적에만 사용합니다."]),
-        ("보유 기간", ["관련 법령이 정한 기간 동안 보관 후 파기합니다."]),
-        ("제3자 제공", ["법령에 따른 경우를 제외하고 동의 없이 제3자에게 제공하지 않습니다."]),
-        ("책임자", [f"개인정보보호책임자: {SITE['privacy_officer']} · 문의 {SITE['phone']}"]),
+        ("수집하는 항목", [
+            "마사지고는 예약과 서비스 제공에 꼭 필요한 최소한의 정보만 수집합니다.",
+            "구체적으로 연락처(전화번호), 방문 지역, 예약한 코스와 시간 정보를 받습니다.",
+            "주민등록번호 등 민감정보는 수집하지 않으며, 통화 응대 과정에서 불필요한 개인정보를 묻지 않습니다.",
+        ]),
+        ("이용 목적", [
+            "수집한 정보는 예약 접수, 가까운 매니저 배정, 도착 안내 연락, 고객 응대 목적에만 사용합니다.",
+            "이 외의 목적으로는 이용하지 않으며, 마케팅 활용이 필요한 경우 별도 동의를 받습니다.",
+        ]),
+        ("보유 및 파기", [
+            "수집한 정보는 이용 목적이 달성되면 지체 없이 파기하는 것을 원칙으로 합니다.",
+            "관련 법령에서 일정 기간 보관을 정한 경우에는 그 기간 동안만 보관한 뒤 파기합니다.",
+            "전자적 파일은 복구할 수 없는 방법으로 삭제합니다.",
+        ]),
+        ("제3자 제공", [
+            "법령에 따른 경우를 제외하고, 고객의 동의 없이 개인정보를 제3자에게 제공하지 않습니다.",
+            "배차를 위해 매니저에게 전달되는 정보도 서비스 제공에 필요한 범위로 제한합니다.",
+        ]),
+        ("이용자의 권리", [
+            "고객은 본인의 개인정보에 대해 열람·정정·삭제를 요청할 수 있습니다.",
+            "요청은 고객센터로 연락 주시면 관련 법령에 따라 처리합니다.",
+        ]),
+        ("책임자", [
+            f"개인정보보호책임자: {SITE['privacy_officer']}",
+            f"문의: {SITE['phone']} · 이메일 {SITE['email']}",
+        ]),
     ]),
     "terms": ("이용약관", [
-        ("목적", ["본 약관은 마사지고 출장마사지 서비스 이용에 관한 조건을 정합니다."]),
-        ("서비스 내용", ["본 서비스는 건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다."]),
-        ("예약·결제", ["관리 시작 전 안내된 금액으로 결제하며 표시 금액 외 추가 비용은 없습니다."]),
-        ("환불·분쟁", ["예약 취소·환불은 관련 법령과 본 약관에 따라 처리합니다.", f"분쟁이 있으면 고객센터 {SITE['phone']}로 연락 주세요."]),
-        ("이용 제한", ["19세 미만은 이용할 수 없습니다."]),
+        ("목적", [
+            "본 약관은 마사지고가 제공하는 출장마사지 서비스의 이용 조건과 절차, 회사와 이용자의 권리·의무를 정합니다.",
+        ]),
+        ("서비스 내용", [
+            "마사지고는 고객이 지정한 장소로 매니저가 방문해 제공하는 출장 마사지 서비스입니다.",
+            "본 서비스는 건강관리를 위한 이완 서비스이며, 의료 행위나 치료를 목적으로 하지 않습니다.",
+            "질환·통증이 있는 경우 전문의 상담을 함께 받으시기를 권합니다.",
+        ]),
+        ("예약과 결제", [
+            "예약은 전화 접수를 통해 이루어지며, 회사는 가까운 매니저를 배정해 예상 도착 시간을 안내합니다.",
+            "결제는 관리 시작 전 안내된 금액으로 진행하며, 표시 금액 외 추가 비용은 없습니다.",
+            "심야·도서 지역 등 일부 권역은 예약 시 별도 안내가 있을 수 있습니다.",
+        ]),
+        ("취소·환불·분쟁", [
+            "예약 변경·취소는 가능한 한 빨리 고객센터로 알려 주시면 도와드립니다.",
+            "환불은 관련 법령과 본 약관에 따라 처리합니다.",
+            f"분쟁이 발생하면 고객센터 {SITE['phone']}로 연락 주시면 신속히 해결하겠습니다.",
+        ]),
+        ("이용자의 의무와 제한", [
+            "이용자는 예약 시 정확한 정보를 제공해야 하며, 매니저에게 약속된 관리 외의 행위를 요구할 수 없습니다.",
+            "19세 미만은 본 서비스를 이용할 수 없습니다.",
+            "관리사 또는 이용자의 안전을 위협하는 경우 서비스가 중단될 수 있습니다.",
+        ]),
+        ("회사의 책임", [
+            "회사는 안내한 시간과 금액, 본사 책임 배정을 성실히 이행합니다.",
+            "다만 천재지변·교통 등 회사가 통제할 수 없는 사유로 인한 지연에 대해서는 책임이 제한될 수 있습니다.",
+        ]),
     ]),
     "youth": ("청소년보호정책", [
-        ("기본 방침", ["마사지고는 19세 미만 청소년의 이용을 제한합니다."]),
-        ("연령 확인", ["예약·이용 과정에서 성인 여부를 확인할 수 있습니다."]),
-        ("유해정보 차단", ["청소년에게 유해한 정보가 노출되지 않도록 관리합니다."]),
-        ("책임자", [f"청소년보호 책임: {SITE['privacy_officer']} · 문의 {SITE['phone']}"]),
+        ("기본 방침", [
+            "마사지고는 19세 미만 청소년의 서비스 이용을 제한합니다.",
+            "청소년이 유해한 환경에 노출되지 않도록 콘텐츠와 응대 전반을 관리합니다.",
+        ]),
+        ("연령 확인", [
+            "예약 및 이용 과정에서 성인 여부를 확인할 수 있으며, 미성년자로 확인되면 서비스 제공을 거부합니다.",
+            "성인 인증이 필요한 경우 관련 절차를 안내합니다.",
+        ]),
+        ("유해정보 차단과 관리", [
+            "사이트는 청소년에게 유해한 표현이나 선정적 콘텐츠를 게시하지 않습니다.",
+            "서비스 안내는 사실에 기반해 작성하며, 자극적·과장된 표현을 지양합니다.",
+        ]),
+        ("교육과 점검", [
+            "응대 인력에게 청소년 보호의 중요성을 안내하고, 정책 준수 여부를 정기적으로 점검합니다.",
+        ]),
+        ("책임자", [
+            f"청소년보호 책임자: {SITE['privacy_officer']}",
+            f"문의: {SITE['phone']} · 이메일 {SITE['email']}",
+        ]),
     ]),
 }
 
@@ -847,25 +1221,66 @@ def build_locations():
         f'<a class="card reveal" href="/locations/{k}/"><div class="kicker">{esc(v["en"]).upper()}</div>'
         f'<h3>{esc(v["ko"])} 출장마사지</h3><p>{esc(v["intro"])}</p><span class="more">{len(v["districts"])}개 지역 →</span></a>'
         for k, v in REGIONS.items())
+    total_d = sum(len(v['districts']) for v in REGIONS.values())
+    loc_notes = [
+        ("어떻게 배차하나요", [
+            "전화로 현재 위치를 말씀하시면 본사 디스패처가 가장 가까운 매니저를 배정하고 예상 도착 시간을 안내합니다.",
+            "혼잡 시간대에는 인접 행정구의 매니저를 함께 운용해 대기 시간을 줄입니다.",
+            "매니저가 출발하면 출발 안내를, 도착 직전 한 번 더 연락을 드립니다.",
+        ]),
+        ("지역마다 무엇이 다른가요", [
+            "각 행정구 페이지에는 그 지역만의 동(洞) 단위 평균 도착 시간과 권역 성격, 추천 코스가 담겨 있습니다.",
+            "후기도 행정구별로 실제 이용 고객의 글만 따로 모아 보여 드립니다.",
+            "가격과 안전·결제 정책은 회사 공통 정책이라 어느 지역이든 동일합니다.",
+        ]),
+        ("도착 시간은 어디서 확인하나요", [
+            "광역권을 고른 뒤 행정구 페이지로 들어가면, 대표 동별 평균 도착 시간을 미리 확인할 수 있습니다.",
+            "신도시·도심 핵심부는 빠르고, 도서·외곽은 예약 시 별도로 안내드립니다.",
+        ]),
+    ]
+    n_html = notes_section("지역 서비스 안내", loc_notes, eyebrow="HOW IT WORKS")
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">LOCATIONS</span>
 <h1>지역별 출장마사지</h1>
-<p class="lead">서울·경기·인천·부산 4개 광역권, 총 {sum(len(v['districts']) for v in REGIONS.values())}개 행정구에서 운영합니다.</p>
-<div class="grid g2" style="margin-top:34px">{cards}</div></section>{cta_band()}"""
-    write("/locations/", page(f"지역별 출장마사지 — 서울·경기·인천·부산 | {SITE['brand']}",
-        f"마사지고 출장마사지 지역 안내. 서울·경기·인천·부산 총 {sum(len(v['districts']) for v in REGIONS.values())}개 행정구 전역 출장 가능.",
+<p class="lead">마사지고는 서울·경기·인천·부산 4개 광역권, 총 {total_d}개 행정구 전역에서 운영합니다. 광역권을 고르면 행정구별 도착 시간과 후기를 확인할 수 있습니다.</p>
+<div class="grid g2" style="margin-top:34px">{cards}</div></section>
+{n_html}
+{cta_band()}"""
+    write("/locations/", page(f"지역별 출장마사지 — 서울·경기·인천·부산 {total_d}개 지역 | {SITE['brand']}",
+        f"마사지고 출장마사지 지역 안내. 서울·경기·인천·부산 총 {total_d}개 행정구 전역 출장 가능. 배차 방식과 도착 시간 확인 방법을 안내합니다.",
         "/locations/", body, breadcrumb_jsonld(cb)))
     # metro hubs
     for k, v in REGIONS.items():
         cb = [("홈", "/"), ("지역", "/locations/"), (v["ko"], None)]
+        # 행정구를 성격 설명과 함께 카드로
         dist_cards = "".join(
-            f'<a href="/locations/{k}/{d[1]}/">{esc(d[0])}</a>' for d in v["districts"])
+            f'<a class="card reveal" href="/locations/{k}/{d[1]}/"><div class="kicker">{esc(d[0])}</div>'
+            f'<h3 style="font-size:16px">{esc(d[0])} 출장마사지</h3><p style="font-size:13px">{esc(d[2])} · {esc(d[4])}</p>'
+            f'<span class="more">자세히 →</span></a>' for d in v["districts"])
+        secs = METRO_SECTIONS.get(k, [])
+        sec_html = notes_section(f"{v['ko']} 권역 안내", secs, eyebrow="OVERVIEW")
+        faqs = [
+            (f"{v['ko']} 어디까지 출장 되나요?", f"{v['ko']} {len(v['districts'])}개 행정구 전역 출장 가능합니다. 정확한 도착 시간은 예약 시 위치를 확인하고 안내드립니다."),
+            ("도착까지 얼마나 걸리나요?", f"{v['intro']} 권역과 시간대에 따라 달라지며 예약 시 안내드립니다."),
+            ("어떤 코스가 인기 있나요?", "퇴근 후 이완을 원하는 분이 많아 스웨디시와 아로마가 고르게 인기 있습니다."),
+            ("결제와 추가 비용은요?", "관리 시작 전 안내된 금액으로 결제하며 추가 비용은 없습니다."),
+        ]
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(v["en"]).upper()}</span>
 <h1>{esc(v['ko'])} 출장마사지</h1><p class="lead">{esc(v['intro'])}</p>
-<div class="linklist" style="margin-top:30px">{dist_cards}</div></section>{cta_band()}"""
+<div class="chips">
+<div class="chip"><span class="k">행정구</span><span class="v grad">{len(v['districts'])}개 전역</span></div>
+<div class="chip"><span class="k">누적 배차</span><span class="v">{OPS['by_region'].get(v['ko'],0):,}건</span></div>
+<div class="chip"><span class="k">운영</span><span class="v">24/7 연중무휴</span></div>
+</div></section>
+{sec_html}
+<section class="wrap tight"><span class="eyebrow">DISTRICTS</span><h2>{esc(v['ko'])} 행정구별 안내</h2>
+<p class="lead">각 지역의 동(洞)별 도착 시간과 고유 후기를 확인하세요.</p>
+<div class="grid g3" style="margin-top:24px">{dist_cards}</div></section>
+<section class="wrap tight"><span class="eyebrow">FAQ</span><h2>{esc(v['ko'])} 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{cta_band()}"""
         write(f"/locations/{k}/", page(
-            f"{v['ko']} 출장마사지 — {len(v['districts'])}개 지역 | {SITE['brand']}",
-            f"{v['ko']} 전역 출장마사지. {v['intro']} {len(v['districts'])}개 행정구별 안내와 예약 {SITE['phone']}.",
-            f"/locations/{k}/", body, breadcrumb_jsonld(cb)))
+            f"{v['ko']} 출장마사지 — {len(v['districts'])}개 지역 전역 출장 | {SITE['brand']}",
+            f"{v['ko']} 전역 출장마사지. {v['intro']} {len(v['districts'])}개 행정구 권역 특징·도착 시간·인기 코스 안내, 예약 {SITE['phone']}.",
+            f"/locations/{k}/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
         # districts
         for (dko, dslug, character, dongs, landmark) in v["districts"]:
             build_district(k, v, dko, dslug, character, dongs, landmark)
