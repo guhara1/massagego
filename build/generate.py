@@ -6,7 +6,7 @@ from data import (SITE, OPS, TEAM, SERVICES, THERAPISTS, MAGAZINE, FAQ_MAIN,
                   REVIEWS_MAIN, REGIONS, arrival_minutes, district_rating,
                   district_review_count, district_reviews)
 from content import (SERVICE_SECTIONS, SERVICE_EXTRA, THERAPIST_SECTIONS,
-                     THERAPIST_COMMON, THERAPIST_EXTRA, METRO_SECTIONS)
+                     THERAPIST_DEEP, THERAPIST_COMMON, THERAPIST_EXTRA, METRO_SECTIONS)
 
 def prose_section(heading, paras, eyebrow=None):
     eb = f'<span class="eyebrow">{esc(eyebrow)}</span>' if eyebrow else ""
@@ -703,12 +703,15 @@ def build_therapists():
                 ("소통이 어렵지 않을까요?", "압 조절·부위 요청 같은 핵심 의사는 간단한 표현으로 충분히 전달됩니다. 소통의 편안함이 가장 중요하면 한국인 관리사를 요청해 주세요."),
                 ("국적과 무관하게 지켜지는 것은요?", "모든 매니저는 본사 등록 절차와 자문 트레이너 기본 교육을 이수합니다. 압은 언제든 조절·중단할 수 있고, 약속된 관리 외의 행위는 정중히 거절될 수 있습니다.")]
         secs = THERAPIST_SECTIONS.get(t["slug"], [])
+        deep = THERAPIST_DEEP.get(t["slug"], [])
         sec_html = notes_section(f"{t['ko']} 관리사, 자세히", secs, eyebrow="PROFILE")
-        common_html = notes_section("배정·소통·안전 안내", THERAPIST_COMMON + THERAPIST_EXTRA, eyebrow="POLICY", start=len(secs) + 1)
+        deep_html = notes_section(f"{t['ko']} 관리사 이용 가이드", deep, eyebrow="GUIDE", start=len(secs) + 1)
+        common_html = notes_section("배정·소통·안전 안내", THERAPIST_COMMON + THERAPIST_EXTRA, eyebrow="POLICY", start=len(secs) + len(deep) + 1)
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(t['en']).upper()} THERAPIST</span>
 <h1>{esc(t['ko'])} 관리사</h1><p class="lead">{esc(t['desc'])}</p>
 <div class="chips">{pts}</div></section>
 {sec_html}
+{deep_html}
 {common_html}
 <section class="wrap tight"><h2>다른 국적 관리사</h2><div class="linklist">{other}</div></section>
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
@@ -762,6 +765,18 @@ def build_pricing():
             "받고 난 뒤 금액이 달라지거나, 안내하지 않은 항목을 더 청구하는 일은 없습니다.",
             "할인을 미끼로 한 과장 광고나 현장 추가 권유를 하지 않습니다.",
             "예약 전화에서 최종 금액을 분명히 확인하실 수 있으니, 궁금한 점은 무엇이든 물어보세요.",
+        ]),
+        ("시간대·지역에 따른 차이", [
+            "기본 권역에서는 시간대와 무관하게 표시 금액으로 받으실 수 있습니다.",
+            "다만 심야 시간대나 거리가 먼 외곽·도서 지역은 이동 여건에 따라 도착이 더 걸리거나 별도 안내가 있을 수 있습니다.",
+            "이런 경우에도 변동 사항은 예약 전화에서 미리 분명히 알려 드립니다.",
+        ]),
+        ("어떤 코스가 좋을지 모르겠다면", [
+            "예약 시 오늘의 컨디션과 불편한 부위를 말씀해 주시면 그에 맞는 코스와 시간을 함께 골라 드립니다.",
+            "처음이라면 스웨디시 90분, 수면이 고민이면 아로마, 또렷한 통증은 스포츠를 권합니다.",
+            "각 코스의 자세한 추천 상황은 서비스 페이지에서 확인하실 수 있습니다.",
+            "불필요하게 비싼 코스를 권하지 않으며, 처음에는 부담 없는 코스로 시작해 보시기를 권합니다.",
+            "한 번 받아 본 뒤 다음 예약 때 시간을 늘리거나 코스를 바꾸는 분이 많으니, 처음부터 길게 잡지 않으셔도 됩니다.",
         ]),
     ]
     n_html = notes_section("요금 안내, 자세히", notes, eyebrow="DETAILS")
@@ -1022,6 +1037,16 @@ def build_static_pages():
             "건강관리를 위한 이완 서비스를 제공하며, 의료·치료 행위는 하지 않습니다.",
             "19세 이상 이용 가능하며, 예약 과정에서 성인 여부를 확인할 수 있습니다.",
         ]),
+        ("매니저와 고객, 함께 보호합니다", [
+            "마사지고는 고객의 안전뿐 아니라 매니저의 안전도 똑같이 중요하게 봅니다.",
+            "사전에 안내된 건강관리 목적의 관리 외에 약속되지 않은 행위는 정중히 거절될 수 있습니다.",
+            "서로 존중하는 환경에서 더 좋은 관리가 이뤄진다고 믿으며, 이는 건전한 운영을 위한 기본 원칙입니다.",
+        ]),
+        ("불편이 있었다면", [
+            "관리 중 압이나 진행이 불편하면 참지 말고 바로 말씀해 주세요. 즉시 조절하거나 중단합니다.",
+            "관리 후 아쉬운 점은 고객센터로 알려 주시면 운영 개선과 매니저 관리에 반영합니다.",
+            "정당한 사유의 환불·분쟁은 관련 법령과 이용약관에 따라 신속히 처리합니다.",
+        ]),
     ]
     n_html = notes_section("마사지고는 이렇게 일합니다", notes, eyebrow="WHO · HOW · WHY")
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">ABOUT</span>
@@ -1259,10 +1284,11 @@ def build_locations():
         secs = METRO_SECTIONS.get(k, [])
         sec_html = notes_section(f"{v['ko']} 권역 안내", secs, eyebrow="OVERVIEW")
         faqs = [
-            (f"{v['ko']} 어디까지 출장 되나요?", f"{v['ko']} {len(v['districts'])}개 행정구 전역 출장 가능합니다. 정확한 도착 시간은 예약 시 위치를 확인하고 안내드립니다."),
-            ("도착까지 얼마나 걸리나요?", f"{v['intro']} 권역과 시간대에 따라 달라지며 예약 시 안내드립니다."),
-            ("어떤 코스가 인기 있나요?", "퇴근 후 이완을 원하는 분이 많아 스웨디시와 아로마가 고르게 인기 있습니다."),
-            ("결제와 추가 비용은요?", "관리 시작 전 안내된 금액으로 결제하며 추가 비용은 없습니다."),
+            (f"{v['ko']} 어디까지 출장 되나요?", f"{v['ko']} {len(v['districts'])}개 행정구 전역 출장 가능합니다. 신도시·도심 핵심부는 도착이 빠르고, 외곽·도서 지역은 예약 시 도착 시간을 별도로 안내드립니다. 정확한 시간은 현재 위치를 확인한 뒤 알려 드립니다."),
+            ("도착까지 얼마나 걸리나요?", f"{v['intro']} 같은 광역권이라도 권역과 시간대에 따라 도착 시간이 달라집니다. 각 행정구 페이지에서 동(洞) 단위 평균 도착 시간을 미리 확인하실 수 있습니다."),
+            ("어떤 코스가 인기 있나요?", "퇴근 후 이완을 원하는 분이 많아 스웨디시와 아로마가 고르게 인기 있습니다. 뭉친 부위가 또렷하면 스포츠, 오래 앉아 굳었다면 타이를 권합니다. 고민되면 예약 시 컨디션을 말씀해 주세요."),
+            ("관리사 국적·성별을 고를 수 있나요?", "네. 예약 시 선호를 말씀하시면 가능한 범위에서 맞춰 배정합니다. 시간대·권역에 따라 어려울 때는 가까운 대안을 함께 안내드립니다."),
+            ("결제와 추가 비용은요?", "관리 시작 전 안내된 금액으로 결제하며 표시 금액 외 추가 비용은 없습니다. 심야·도서 지역 등 일부 권역만 예약 시 미리 안내드립니다."),
         ]
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(v["en"]).upper()}</span>
 <h1>{esc(v['ko'])} 출장마사지</h1><p class="lead">{esc(v['intro'])}</p>
