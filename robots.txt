@@ -1,8 +1,29 @@
+# 마사지고 robots.txt — 검색엔진 인덱싱 허용
 User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+# Google
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# Naver
+User-agent: Yeti
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Daum
+User-agent: Daum
+Allow: /
+
+# AI 크롤러
 User-agent: GPTBot
 Allow: /
 
@@ -12,5 +33,5 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://massagego.xyz/sitemap.xml
-Host: massagego.xyz
+Sitemap: https://massagego-6r2z.vercel.app/sitemap.xml
+Host: massagego-6r2z.vercel.app

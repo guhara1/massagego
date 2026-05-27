@@ -350,7 +350,7 @@ def footer():
 </div>
 </div></footer>"""
 
-def page(title, desc, path, body, jsonld=None, og_image=None):
+def page(title, desc, path, body, jsonld=None, og_image=None, head_extra=""):
     canonical = url(path)
     ogimg = og_image or url("/assets/og-cover.jpg")
     blocks = ""
@@ -389,7 +389,9 @@ def page(title, desc, path, body, jsonld=None, og_image=None):
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
-<style>{CSS}</style>
+<link rel="alternate" type="application/rss+xml" title="{esc(SITE['brand'])} 매거진" href="/rss.xml">
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+{head_extra}<style>{CSS}</style>
 {blocks}
 </head><body>
 {header()}
@@ -631,10 +633,12 @@ def build_home():
                               "url": url("/authors/park-jiyeon/")},
                "publisher": {"@id": url("/#org")}, "datePublished": "2026-01-05", "dateModified": NOW,
                "citation": [{"@type": "CreativeWork", "name": f"{org} — {t}", "url": u} for t, org, u in REFERENCES]}
+    verify = (f'<meta name="google-site-verification" content="{esc(SITE["google_verify"])}">'
+              f'<meta name="naver-site-verification" content="{esc(SITE["naver_verify"])}">')
     write("/", page(
         f"{SITE['brand']} — 출장마사지 예약 {SITE['phone']} · 서울·경기·인천·부산 전 권역",
         f"마사지고 출장마사지. 전화 한 통이면 가까운 매니저가 출발합니다. 서울 기준 평균 {OPS['avg_arrival']}분 도착, 스웨디시·아로마·타이·로미로미·스포츠 5종. 예약 {SITE['phone']}, {SITE['hours']}.",
-        "/", body, [ORG_JSONLD, website, local, article, faq_jsonld(FAQ_MAIN)]))
+        "/", body, [ORG_JSONLD, website, local, article, faq_jsonld(FAQ_MAIN)], head_extra=verify))
 
 
 def build_services():
@@ -1564,11 +1568,32 @@ def build_meta_files():
         f.write("\n".join(sm))
 
     host = D.replace("https://", "")
-    robots = f"""User-agent: *
+    robots = f"""# 마사지고 robots.txt — 검색엔진 인덱싱 허용
+User-agent: *
 Allow: /
 Disallow: /admin/
 Disallow: /api/
 
+# Google
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# Naver
+User-agent: Yeti
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Daum
+User-agent: Daum
+Allow: /
+
+# AI 크롤러
 User-agent: GPTBot
 Allow: /
 
@@ -1583,6 +1608,32 @@ Host: {host}
 """
     with open(os.path.join(ROOT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(robots)
+
+    # RSS 2.0 피드 (매거진)
+    import email.utils, datetime as _dt
+    def rfc822(dstr):
+        d = _dt.datetime.strptime(dstr, "%Y-%m-%d").replace(hour=9, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))
+        return email.utils.format_datetime(d)
+    now822 = email.utils.format_datetime(_dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9))))
+    items = ""
+    for m in sorted(MAGAZINE, key=lambda x: x["date"], reverse=True):
+        link = url(f"/magazine/{m['slug']}/")
+        items += (f"<item><title>{esc(m['title'])}</title><link>{link}</link>"
+                  f"<guid isPermaLink=\"true\">{link}</guid>"
+                  f"<dc:creator>{esc(m['author'])}</dc:creator>"
+                  f"<pubDate>{rfc822(m['date'])}</pubDate>"
+                  f"<description>{esc(m['desc'])}</description></item>")
+    rss = (f'<?xml version="1.0" encoding="UTF-8"?>\n'
+           f'<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
+           f'<channel><title>{esc(SITE["brand"])} 매거진</title>'
+           f'<link>{url("/magazine/")}</link>'
+           f'<atom:link href="{url("/rss.xml")}" rel="self" type="application/rss+xml"/>'
+           f'<description>출장마사지 가이드 · 코스 선택 · 안전 안내 — {esc(SITE["brand"])} 운영팀</description>'
+           f'<language>ko-kr</language><lastBuildDate>{now822}</lastBuildDate>'
+           f'<image><url>{url("/assets/og-cover.jpg")}</url><title>{esc(SITE["brand"])} 매거진</title><link>{url("/magazine/")}</link></image>'
+           f'{items}</channel></rss>')
+    with open(os.path.join(ROOT, "rss.xml"), "w", encoding="utf-8") as f:
+        f.write(rss)
 
     manifest = {
         "name": f"{SITE['brand']} 출장마사지", "short_name": SITE["brand"],
