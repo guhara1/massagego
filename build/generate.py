@@ -636,8 +636,8 @@ def build_home():
     verify = (f'<meta name="google-site-verification" content="{esc(SITE["google_verify"])}">'
               f'<meta name="naver-site-verification" content="{esc(SITE["naver_verify"])}">')
     write("/", page(
-        f"{SITE['brand']} — 출장마사지 예약 {SITE['phone']} · 서울·경기·인천·부산 전 권역",
-        f"마사지고 출장마사지. 전화 한 통이면 가까운 매니저가 출발합니다. 서울 기준 평균 {OPS['avg_arrival']}분 도착, 스웨디시·아로마·타이·로미로미·스포츠 5종. 예약 {SITE['phone']}, {SITE['hours']}.",
+        f"출장마사지 마사지고 | 서울·경기·인천·부산 24시 예약",
+        f"전화 한 통이면 가까운 매니저가 출발하는 출장마사지. 서울·경기·인천·부산 전 권역, 평균 {OPS['avg_arrival']}분 도착. 24시 예약 {SITE['phone']}.",
         "/", body, [ORG_JSONLD, website, local, article, faq_jsonld(FAQ_MAIN)], head_extra=verify))
 
 
@@ -680,8 +680,8 @@ def build_services():
 {ch_html}
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>코스 선택 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
 {cta_band()}"""
-    write("/service/", page(f"출장마사지 서비스 — 5종 코스 비교·선택 가이드 | {SITE['brand']}",
-        "스웨디시·아로마·타이·로미로미·스포츠 5종 출장마사지 코스를 비교하세요. 컨디션별 추천과 선택 가이드, 가격을 한눈에 안내합니다.",
+    write("/service/", page(f"출장마사지 코스 5종 안내 | {SITE['brand']}",
+        "스웨디시·아로마·타이·로미로미·스포츠 5종 출장마사지 코스를 컨디션별로 비교하고 가격을 확인하세요.",
         "/service/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
     # detail
     for s in SERVICES:
@@ -728,8 +728,8 @@ def build_services():
                       "offers": [{"@type": "Offer", "name": f"{s['ko']} {t}", "price": p.replace(",","").replace("원",""),
                                   "priceCurrency": "KRW"} for t, p in s["prices"]]}
         write(f"/service/{s['slug']}/", page(
-            f"{s['ko']} 출장마사지 — 가격·추천·예약 | {SITE['brand']}",
-            f"{s['ko']} 출장마사지 안내. {s['summary']} 60·90·120분 가격과 추천 상황을 확인하고 {SITE['phone']}로 예약하세요.",
+            f"{s['ko']} 출장마사지 가격·예약 | {SITE['brand']}",
+            f"{s['ko']} 출장마사지 60·90·120분 가격과 컨디션별 추천 상황 안내. 24시 예약 {SITE['phone']}.",
             f"/service/{s['slug']}/", body,
             [service_ld, webpage_jsonld(f"/service/{s['slug']}/", f"{s['ko']} 출장마사지", s['summary']),
              breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
@@ -767,8 +767,8 @@ def build_therapists():
 {g_html}
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>관리사 배정 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
 {cta_band()}"""
-    write("/therapists/", page(f"관리사 국적 안내 — 6개국 강점 비교 | {SITE['brand']}",
-        "한국·중국·태국·베트남·러시아·일본 관리사의 국적별 강점과 잘 맞는 코스를 비교합니다. 선호 국적·성별 배정이 가능합니다.",
+    write("/therapists/", page(f"관리사 국적 안내 6개국 | {SITE['brand']}",
+        "한국·중국·태국·베트남·러시아·일본 관리사의 강점과 추천 코스 비교. 선호 국적·성별 배정 가능.",
         "/therapists/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
     for t in THERAPISTS:
         cb = [("홈", "/"), ("관리사", "/therapists/"), (t["ko"], None)]
@@ -797,7 +797,7 @@ def build_therapists():
 {cta_band()}"""
         write(f"/therapists/{t['slug']}/", page(
             f"{t['ko']} 관리사 출장마사지 | {SITE['brand']}",
-            f"{t['ko']} 관리사 안내. {t['desc']} 국적별 강점·추천 코스·선호 배정 안내, 예약 {SITE['phone']}.",
+            f"{t['ko']} 관리사 출장마사지. {t['desc']}",
             f"/therapists/{t['slug']}/", body,
             [webpage_jsonld(f"/therapists/{t['slug']}/", f"{t['ko']} 관리사 출장마사지", t['desc'],
                             author="박지연", reviewer="이도현"),
@@ -874,8 +874,8 @@ def build_pricing():
 {n_html}
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>요금 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
 {cta_band()}"""
-    write("/pricing/", page(f"출장마사지 요금표 — 코스별 가격·결제 안내 | {SITE['brand']}",
-        "스웨디시·아로마·타이·로미로미·스포츠 출장마사지 요금표. 60·90·120분 가격, 시간 선택·결제·환불 안내까지 한눈에. 추가 비용 없음.",
+    write("/pricing/", page(f"출장마사지 요금표 | {SITE['brand']}",
+        "스웨디시·아로마·타이·로미로미·스포츠 출장마사지 요금표. 60·90·120분 가격, 추가 비용 없음.",
         "/pricing/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
@@ -973,8 +973,8 @@ def build_magazine():
 <div class="grid g3" style="margin-top:34px">{cards}</div></section>
 {n_html}
 {cta_band()}"""
-    write("/magazine/", page(f"매거진 — 출장마사지 가이드 | {SITE['brand']}",
-        "출장마사지 첫 이용 가이드, 컨디션별 코스 선택, 안전 원칙까지. 마사지고 운영팀이 직접 작성하고 자문 트레이너가 감수한 안내 글.",
+    write("/magazine/", page(f"출장마사지 매거진·가이드 | {SITE['brand']}",
+        "출장마사지 첫 이용 가이드, 컨디션별 코스 선택, 안전 원칙. 운영팀이 작성하고 자문 트레이너가 감수합니다.",
         "/magazine/", body, breadcrumb_jsonld(cb)))
     for m in MAGAZINE:
         cb = [("홈", "/"), ("매거진", "/magazine/"), (m["title"], None)]
@@ -1008,7 +1008,7 @@ def build_magazine():
               "mainEntityOfPage": url(f"/magazine/{m['slug']}/"),
               "citation": [{"@type": "CreativeWork", "name": f"{org} — {t}", "url": u} for t, org, u in REFERENCES]}
         write(f"/magazine/{m['slug']}/", page(
-            f"{m['title']} | {SITE['brand']} 매거진",
+            f"{m['title']} | {SITE['brand']}",
             m["desc"], f"/magazine/{m['slug']}/", body, [ld, breadcrumb_jsonld(cb)]))
 
 
@@ -1152,8 +1152,8 @@ def build_static_pages():
 <p style="color:var(--dim);font-size:13.5px">본 서비스는 건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다. 19세 이상 이용 가능합니다.</p></div></section>
 {references_block(extra_internal=[("편집 정책","/editorial-policy/"),("연락처","/contact/"),("개인정보처리방침","/policy/privacy/"),("이용약관","/policy/terms/")])}
 {cta_band()}"""
-    write("/about/", page(f"회사 소개 — 운영 방식·운영팀·데이터 | {SITE['brand']}",
-        "마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. Who/How/Why 운영 원칙, 운영팀·자문 트레이너, 1차 배차 데이터를 공개합니다.",
+    write("/about/", page(f"회사 소개 | {SITE['brand']} 출장마사지",
+        "본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀. 운영팀·자문 트레이너와 1차 배차 데이터를 공개합니다.",
         "/about/", body, [ORG_JSONLD, webpage_jsonld("/about/", "회사 소개", "마사지고 운영 방식·운영팀·데이터", typ="AboutPage"), breadcrumb_jsonld(cb)]))
 
     # contact
@@ -1193,7 +1193,7 @@ def build_static_pages():
 {n_html}
 {cta_band()}"""
     write("/contact/", page(f"연락처·예약 {SITE['phone']} | {SITE['brand']}",
-        f"마사지고 출장마사지 예약·고객센터 {SITE['phone']}. {SITE['hours']}. 예약 방법, 운영 시간, 문의 안내와 사업자 정보를 확인하세요.",
+        f"마사지고 출장마사지 예약·고객센터 {SITE['phone']}. {SITE['hours']}.",
         "/contact/", body, breadcrumb_jsonld(cb)))
 
     # editorial policy
@@ -1326,7 +1326,7 @@ def build_policies():
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">POLICY</span>
 <h1>{esc(title)}</h1><div class="notes" style="margin-top:28px">{nh}</div></section>{cta_band()}"""
         write(f"/policy/{slug}/", page(f"{title} | {SITE['brand']}",
-            f"마사지고 {title}. " + " ".join(notes[0][1])[:90],
+            (f"마사지고 {title} — " + notes[0][1][0])[:80],
             f"/policy/{slug}/", body, breadcrumb_jsonld(cb)))
 
 
@@ -1361,8 +1361,8 @@ def build_locations():
 <div class="grid g2" style="margin-top:34px">{cards}</div></section>
 {n_html}
 {cta_band()}"""
-    write("/locations/", page(f"지역별 출장마사지 — 서울·경기·인천·부산 {total_d}개 지역 | {SITE['brand']}",
-        f"마사지고 출장마사지 지역 안내. 서울·경기·인천·부산 총 {total_d}개 행정구 전역 출장 가능. 배차 방식과 도착 시간 확인 방법을 안내합니다.",
+    write("/locations/", page(f"지역별 출장마사지 | {SITE['brand']}",
+        f"서울·경기·인천·부산 총 {total_d}개 행정구 전역 출장마사지. 권역별 도착 시간과 후기를 확인하세요.",
         "/locations/", body, breadcrumb_jsonld(cb)))
     # metro hubs
     for k, v in REGIONS.items():
@@ -1398,8 +1398,8 @@ def build_locations():
 {cta_band()}"""
         metro_author = "김세영" if k in ("seoul","gyeonggi") else "이도현"
         write(f"/locations/{k}/", page(
-            f"{v['ko']} 출장마사지 — {len(v['districts'])}개 지역 전역 출장 | {SITE['brand']}",
-            f"{v['ko']} 전역 출장마사지. {v['intro']} {len(v['districts'])}개 행정구 권역 특징·도착 시간·인기 코스 안내, 예약 {SITE['phone']}.",
+            f"{v['ko']} 출장마사지 {len(v['districts'])}개 지역 | {SITE['brand']}",
+            f"{v['ko']} 전역 출장마사지. {v['intro']}",
             f"/locations/{k}/", body,
             [webpage_jsonld(f"/locations/{k}/", f"{v['ko']} 출장마사지", v['intro'], author=metro_author, reviewer="박지연"),
              breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
@@ -1534,8 +1534,8 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
                         author=dist_author, reviewer="박지연",
                         about={"@type": "AdministrativeArea", "name": f"{v['ko']} {dko}"})
     write(path, page(
-        f"{dko} 출장마사지 — 평균 {avg_d}분 도착 · 예약 {SITE['phone']} | {SITE['brand']}",
-        f"{v['ko']} {dko} 출장마사지. {landmark} 인근 평균 약 {avg_d}분 도착, 동별 도착 시간·요금·{dko} 고객 후기 안내. {SITE['hours']}, 예약 {SITE['phone']}.",
+        f"{v['ko']} {dko} 출장마사지 | {SITE['brand']}",
+        f"{v['ko']} {dko} 출장마사지, {landmark} 인근 평균 {avg_d}분 도착. 24시 예약 {SITE['phone']}.",
         path, body, [local_ld, wp, breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
