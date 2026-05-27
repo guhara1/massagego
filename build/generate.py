@@ -502,8 +502,10 @@ ORG_JSONLD = {
     "@id": url("/#org"), "name": SITE["brand"], "legalName": SITE["company"],
     "url": D, "telephone": SITE["phone_intl"], "email": SITE["email"],
     "logo": url("/assets/logo.png"), "image": url("/assets/og-cover.jpg"),
-    "description": SITE["tagline"],
-    "address": {"@type": "PostalAddress", "addressCountry": "KR", "addressLocality": "서울", "streetAddress": SITE["address"]},
+    "description": SITE["tagline"], "taxID": SITE["biz_no"],
+    "founder": {"@type": "Person", "name": SITE["ceo"]},
+    "address": {"@type": "PostalAddress", "addressCountry": "KR", "addressRegion": "경기도",
+                "addressLocality": "파주시", "streetAddress": "청석로 268"},
     "contactPoint": {"@type": "ContactPoint", "telephone": SITE["phone_intl"], "contactType": "reservations",
                      "availableLanguage": ["ko", "en", "zh", "ja"]},
 }

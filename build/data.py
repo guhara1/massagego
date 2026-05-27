@@ -16,13 +16,13 @@ SITE = {
     "phone_href": "tel:050820247419"[:13],  # tel:0508-2024719 형태로 아래에서 보정
     "hours": "매일 11:00 – 익일 05:00 · 연중무휴",
     "author": "마사지고 운영팀",
-    # ── 사업자 정보 (E-E-A-T Trust) — 실제 값 수령 후 치환 ──
-    "company": "마사지고",
-    "ceo": "[추후입력]",
-    "biz_no": "[추후입력]",
-    "address": "[추후입력]",
+    # ── 사업자 정보 (E-E-A-T Trust) ──
+    "company": "YH LAB",
+    "ceo": "김유환",
+    "biz_no": "815-26-00585",
+    "address": "경기도 파주시 청석로 268",
     "mail_order_no": "[추후입력]",
-    "privacy_officer": "[추후입력]",
+    "privacy_officer": "김유환",
     "email": "[추후입력]",
 }
 SITE["phone_href"] = "tel:" + SITE["phone"].replace("-", "")
