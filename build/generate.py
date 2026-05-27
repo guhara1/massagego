@@ -41,7 +41,8 @@ CSS = """
 --grad:linear-gradient(135deg,#f4d29c 0%,#e9b8a7 45%,#c98a6b 100%);
 --grad-soft:linear-gradient(135deg,rgba(244,210,156,.14),rgba(201,138,107,.06));
 }
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:clip}
+body{overflow-x:clip}
 body{background:var(--bg);color:var(--text);line-height:1.65;letter-spacing:-.01em;
 font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 -webkit-font-smoothing:antialiased}
@@ -183,6 +184,16 @@ details>div{padding:0 22px 20px;color:var(--muted);font-size:14.5px;line-height:
 /* cta band */
 .cta-band{text-align:center;background:var(--grad-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .cta-band .wrap{padding:96px 24px}
+/* mobile fixed call bar */
+.mcall{display:none}
+@media(max-width:680px){
+.mcall{position:fixed;left:0;right:0;bottom:0;z-index:95;display:flex;align-items:center;justify-content:center;
+gap:9px;background:var(--grad);color:#1a1208;font-weight:800;font-size:16px;letter-spacing:-.01em;
+padding:15px 16px;padding-bottom:calc(15px + env(safe-area-inset-bottom));box-shadow:0 -8px 26px rgba(0,0,0,.45)}
+.mcall svg{flex-shrink:0}
+body{padding-bottom:72px}
+.menu{padding-bottom:84px}
+}
 /* breadcrumb */
 .crumb{font-size:12.5px;color:var(--dim);margin-bottom:18px}
 .crumb a{color:var(--muted)}
@@ -397,6 +408,7 @@ def page(title, desc, path, body, jsonld=None, og_image=None, head_extra=""):
 {header()}
 <main>{body}</main>
 {footer()}
+<a class="mcall" href="{SITE['phone_href']}" aria-label="전화로 예약하기 {SITE['phone']}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a1208" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>전화 예약 {SITE['phone']}</a>
 <script>{JS}</script>
 </body></html>"""
 
