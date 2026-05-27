@@ -187,6 +187,21 @@ details>div{padding:0 22px 20px;color:var(--muted);font-size:14.5px;line-height:
 .crumb{font-size:12.5px;color:var(--dim);margin-bottom:18px}
 .crumb a{color:var(--muted)}
 .crumb a:hover{color:var(--gold)}
+/* byline (E-E-A-T) */
+.byline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:18px 0 4px;padding:14px 16px;
+border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:13px;color:var(--muted)}
+.byline .av{width:30px;height:30px;border-radius:50%;background:var(--grad);flex-shrink:0}
+.byline a{color:var(--gold);font-weight:700}
+.byline .sep{color:var(--dim)}
+.byline .upd{color:var(--dim);font-size:12px}
+/* references (외부 인용) */
+.refs{border:1px solid var(--line);border-radius:14px;padding:22px 24px;background:var(--surface)}
+.refs h3{font-size:15px;margin-bottom:12px}
+.refs ul{list-style:none}
+.refs li{padding:7px 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.refs li:first-child{border-top:none}
+.refs a{color:var(--gold)}
+.refs .ext::after{content:"↗";font-size:11px;margin-left:4px;color:var(--dim)}
 /* toc */
 .toc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:24px 0}
 .toc .label{margin-bottom:10px;display:block}
@@ -434,6 +449,54 @@ def cta_band():
 <div class="actions" style="justify-content:center"><a class="btn btn-primary" href="{SITE['phone_href']}">{SITE['phone']} 예약하기 →</a></div>
 </div></section>"""
 
+def byline(author="김세영", reviewer="박지연", updated=None):
+    a = AUTHORS[author]; r = AUTHORS[reviewer]
+    upd = updated or NOW
+    return (f'<div class="byline"><span class="av" aria-hidden="true"></span>'
+            f'<span>글 <a href="/authors/{AUTHOR_SLUG[author]}/">{esc(author)}</a> · {esc(a["role"])}</span>'
+            f'<span class="sep">·</span>'
+            f'<span>감수 <a href="/authors/{AUTHOR_SLUG[reviewer]}/">{esc(reviewer)}</a> · {esc(r["role"])}</span>'
+            f'<span class="sep">·</span><span class="upd">최종 업데이트 {upd}</span></div>')
+
+# 외부 신뢰 신호 — 실재하는 공공기관/공식 도메인 루트만 인용(딥링크 미사용)
+REFERENCES = [
+    ("통신판매사업자 정보 공개 확인", "공정거래위원회", "https://www.ftc.go.kr"),
+    ("관련 법령 원문 (공중위생관리법 등)", "국가법령정보센터", "https://www.law.go.kr"),
+    ("스포츠마사지·생활체육 자격 안내", "국민체육진흥공단(KSPO)", "https://www.kspo.or.kr"),
+    ("소비자 분쟁·피해구제 안내", "한국소비자원", "https://www.kca.go.kr"),
+]
+def references_block(extra_internal=None):
+    items = "".join(
+        f'<li><a class="ext" href="{u}" target="_blank" rel="nofollow noopener">{esc(t)}</a> — {esc(org)}</li>'
+        for t, org, u in REFERENCES)
+    internal_block = ""
+    if extra_internal:
+        lis = "".join(f'<li><a href="{href}">{esc(label)}</a></li>' for label, href in extra_internal)
+        internal_block = f'<h3 style="margin-top:16px">관련 안내</h3><ul>{lis}</ul>'
+    return (f'<section class="wrap tight"><span class="eyebrow">REFERENCES · 참고 자료</span>'
+            f'<h2>출처 및 참고 자료</h2>'
+            f'<p class="lead">아래는 본 안내의 근거가 되는 공공기관·법령 정보입니다. 운영 수치는 마사지고 본사 1차 배차 로그에 근거합니다.</p>'
+            f'<div class="refs" style="margin-top:18px"><h3>외부 공식 자료</h3><ul>{items}</ul>{internal_block}</div></section>')
+
+def webpage_jsonld(path, title, desc, author="김세영", reviewer="박지연",
+                   published="2026-01-05", typ="WebPage", about=None):
+    obj = {
+        "@context": "https://schema.org", "@type": typ,
+        "name": title, "description": desc, "url": url(path), "inLanguage": "ko-KR",
+        "isPartOf": {"@id": url("/#website")},
+        "datePublished": published, "dateModified": NOW,
+        "primaryImageOfPage": {"@type": "ImageObject", "url": url("/assets/og-cover.jpg"),
+                               "width": 1200, "height": 630},
+        "author": {"@type": "Person", "name": author, "jobTitle": AUTHORS[author]["role"],
+                   "url": url(f"/authors/{AUTHOR_SLUG[author]}/")},
+        "reviewedBy": {"@type": "Person", "name": reviewer, "jobTitle": AUTHORS[reviewer]["role"],
+                       "url": url(f"/authors/{AUTHOR_SLUG[reviewer]}/")},
+        "publisher": {"@id": url("/#org")},
+        "citation": [{"@type": "CreativeWork", "name": f"{org} — {t}", "url": u} for t, org, u in REFERENCES],
+    }
+    if about: obj["about"] = about
+    return obj
+
 ORG_JSONLD = {
     "@context": "https://schema.org", "@type": "Organization",
     "@id": url("/#org"), "name": SITE["brand"], "legalName": SITE["company"],
@@ -525,7 +588,8 @@ def build_home():
 <div style="margin-top:24px"><a class="btn btn-ghost" href="/reviews/">후기 더 보기 →</a></div></section>
 
 <section class="wrap tight" id="about"><span class="eyebrow">WHO · HOW · WHY</span><h2>누가, 어떻게, 왜 운영하는가</h2>
-<p class="lead">구글 'Who/How/Why' 원칙에 따라 운영 주체와 방식, 이유를 투명하게 공개합니다.</p>
+<p class="lead">'누가, 어떻게, 왜 만들었는가' 원칙에 따라 운영 주체와 방식, 이유를 투명하게 공개합니다.</p>
+{byline(author="김세영", reviewer="박지연")}
 <div class="grid g3" style="margin:30px 0">{team_html}</div>
 <div class="notes">{note_html}</div>
 <div class="databox reveal" style="margin-top:24px"><h3>Data &amp; Methodology</h3>
@@ -537,6 +601,7 @@ def build_home():
 <section class="wrap tight" id="faq"><span class="eyebrow">FAQ</span><h2>자주 묻는 질문</h2>
 <div style="margin-top:24px">{faq_block(FAQ_MAIN)}</div></section>
 
+{references_block(extra_internal=[("회사 소개","/about/"),("편집 정책","/editorial-policy/"),("개인정보처리방침","/policy/privacy/"),("이용약관","/policy/terms/")])}
 {cta_band()}"""
 
     website = {"@context": "https://schema.org", "@type": "WebSite", "@id": url("/#website"),
@@ -556,11 +621,14 @@ def build_home():
                               "contactType": "reservations", "availableLanguage": ["ko","en","zh","ja"]}}
     article = {"@context": "https://schema.org", "@type": "Article",
                "headline": "마사지고 출장마사지 운영 안내", "inLanguage": "ko-KR",
-               "image": url("/assets/og-cover.jpg"),
+               "image": {"@type": "ImageObject", "url": url("/assets/og-cover.jpg"), "width": 1200, "height": 630},
+               "mainEntityOfPage": D,
                "author": [{"@type": "Person", "name": t["name"], "jobTitle": t["role"],
                            "url": url(f"/authors/{AUTHOR_SLUG[t['name']]}/")} for t in TEAM],
-               "reviewedBy": {"@type": "Person", "name": "박지연", "jobTitle": "안전 자문 트레이너"},
-               "publisher": {"@id": url("/#org")}, "datePublished": "2026-01-05", "dateModified": NOW}
+               "reviewedBy": {"@type": "Person", "name": "박지연", "jobTitle": "안전 자문 트레이너",
+                              "url": url("/authors/park-jiyeon/")},
+               "publisher": {"@id": url("/#org")}, "datePublished": "2026-01-05", "dateModified": NOW,
+               "citation": [{"@type": "CreativeWork", "name": f"{org} — {t}", "url": u} for t, org, u in REFERENCES]}
     write("/", page(
         f"{SITE['brand']} — 출장마사지 예약 {SITE['phone']} · 서울·경기·인천·부산 전 권역",
         f"마사지고 출장마사지. 전화 한 통이면 가까운 매니저가 출발합니다. 서울 기준 평균 {OPS['avg_arrival']}분 도착, 스웨디시·아로마·타이·로미로미·스포츠 5종. 예약 {SITE['phone']}, {SITE['hours']}.",
@@ -634,7 +702,8 @@ def build_services():
         body = f"""<section class="wrap">{crumb(cb)}
 <span class="eyebrow">{esc(s['kicker'])}</span><h1>{esc(s['ko'])} 출장마사지</h1>
 <p class="lead">{esc(s['summary'])}</p>
-<div class="prose" style="margin-top:30px;max-width:680px">{ln}</div></section>
+{byline(author="김세영", reviewer="박지연")}
+<div class="prose" style="margin-top:24px;max-width:680px">{ln}</div></section>
 {sec_html}
 {extra_html}
 <section class="wrap tight"><span class="eyebrow">PRICING</span><h2>{esc(s['ko'])} 요금</h2>
@@ -644,6 +713,7 @@ def build_services():
 <p class="lead">컨디션에 따라 잘 맞는 코스가 다릅니다. 아래에서 비교해 보세요.</p>
 <div class="linklist">{other}</div></section>
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>{esc(s['ko'])} 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{references_block(extra_internal=[("전체 요금표","/pricing/"),("관리사 안내","/therapists/"),("편집 정책","/editorial-policy/"),("이용약관","/policy/terms/")])}
 {cta_band()}"""
         service_ld = {"@context": "https://schema.org", "@type": "Service",
                       "name": f"{s['ko']} 출장마사지", "serviceType": s["en"] + " massage",
@@ -655,7 +725,8 @@ def build_services():
             f"{s['ko']} 출장마사지 — 가격·추천·예약 | {SITE['brand']}",
             f"{s['ko']} 출장마사지 안내. {s['summary']} 60·90·120분 가격과 추천 상황을 확인하고 {SITE['phone']}로 예약하세요.",
             f"/service/{s['slug']}/", body,
-            [service_ld, breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
+            [service_ld, webpage_jsonld(f"/service/{s['slug']}/", f"{s['ko']} 출장마사지", s['summary']),
+             breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
 def build_therapists():
@@ -709,17 +780,22 @@ def build_therapists():
         common_html = notes_section("배정·소통·안전 안내", THERAPIST_COMMON + THERAPIST_EXTRA, eyebrow="POLICY", start=len(secs) + len(deep) + 1)
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(t['en']).upper()} THERAPIST</span>
 <h1>{esc(t['ko'])} 관리사</h1><p class="lead">{esc(t['desc'])}</p>
+{byline(author="박지연", reviewer="이도현")}
 <div class="chips">{pts}</div></section>
 {sec_html}
 {deep_html}
 {common_html}
 <section class="wrap tight"><h2>다른 국적 관리사</h2><div class="linklist">{other}</div></section>
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{references_block(extra_internal=[("서비스 코스 안내","/service/"),("회사 소개","/about/"),("편집 정책","/editorial-policy/"),("이용약관","/policy/terms/")])}
 {cta_band()}"""
         write(f"/therapists/{t['slug']}/", page(
             f"{t['ko']} 관리사 출장마사지 | {SITE['brand']}",
             f"{t['ko']} 관리사 안내. {t['desc']} 국적별 강점·추천 코스·선호 배정 안내, 예약 {SITE['phone']}.",
-            f"/therapists/{t['slug']}/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
+            f"/therapists/{t['slug']}/", body,
+            [webpage_jsonld(f"/therapists/{t['slug']}/", f"{t['ko']} 관리사 출장마사지", t['desc'],
+                            author="박지연", reviewer="이도현"),
+             breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
 def build_pricing():
@@ -902,22 +978,29 @@ def build_magazine():
             ps = "".join(f"<p>{esc(p)}</p>" for p in paras)
             sections += f'<h2 id="s{i}">{esc(h)}</h2>{ps}'
         a = AUTHORS[m["author"]]
+        mag_reviewer = "박지연" if m["author"] != "박지연" else "이도현"
         body = f"""<section class="wrap" style="max-width:760px">{crumb(cb)}
-<span class="eyebrow">{esc(m['date'])}</span><h1 style="font-size:clamp(30px,4.5vw,48px)">{esc(m['title'])}</h1>
+<span class="eyebrow">{esc(m['date'])} 발행 · 최종 업데이트 {NOW}</span><h1 style="font-size:clamp(30px,4.5vw,48px)">{esc(m['title'])}</h1>
 <p class="lead">{esc(m['desc'])}</p>
-<p style="margin-top:14px;font-size:13px;color:var(--dim)">글 · <a href="/authors/{AUTHOR_SLUG[m['author']]}/" style="color:var(--gold)">{esc(m['author'])}</a> · {esc(a['role'])} · {esc(m['date'])} 발행</p>
-<div class="prose" style="margin-top:22px"><p style="font-size:16px">{esc(m.get('lead',''))}</p></div>
+{byline(author=m['author'], reviewer=mag_reviewer, updated=NOW)}
+<div class="prose" style="margin-top:18px"><p style="font-size:16px">{esc(m.get('lead',''))}</p></div>
 <div class="toc"><span class="label">목차</span>{toc}</div>
 <div class="prose">{sections}</div>
 <div class="linklist" style="margin-top:40px">{"".join(f'<a href="/magazine/{o["slug"]}/">{esc(o["title"][:18])}…</a>' for o in MAGAZINE if o["slug"]!=m["slug"])}</div>
-</section>{cta_band()}"""
+</section>
+{references_block(extra_internal=[("회사 소개","/about/"),("편집 정책","/editorial-policy/"),("서비스 코스","/service/"),("요금 안내","/pricing/")])}
+{cta_band()}"""
         ld = {"@context": "https://schema.org", "@type": "BlogPosting", "headline": m["title"],
-              "description": m["desc"], "inLanguage": "ko-KR", "image": url("/assets/og-cover.jpg"),
-              "datePublished": m["date"], "dateModified": m["date"],
+              "description": m["desc"], "inLanguage": "ko-KR",
+              "image": {"@type": "ImageObject", "url": url("/assets/og-cover.jpg"), "width": 1200, "height": 630},
+              "datePublished": m["date"], "dateModified": NOW,
               "author": {"@type": "Person", "name": m["author"], "jobTitle": a["role"],
                          "url": url(f"/authors/{AUTHOR_SLUG[m['author']]}/")},
+              "reviewedBy": {"@type": "Person", "name": mag_reviewer, "jobTitle": AUTHORS[mag_reviewer]["role"],
+                             "url": url(f"/authors/{AUTHOR_SLUG[mag_reviewer]}/")},
               "publisher": {"@id": url("/#org")},
-              "mainEntityOfPage": url(f"/magazine/{m['slug']}/")}
+              "mainEntityOfPage": url(f"/magazine/{m['slug']}/"),
+              "citation": [{"@type": "CreativeWork", "name": f"{org} — {t}", "url": u} for t, org, u in REFERENCES]}
         write(f"/magazine/{m['slug']}/", page(
             f"{m['title']} | {SITE['brand']} 매거진",
             m["desc"], f"/magazine/{m['slug']}/", body, [ld, breadcrumb_jsonld(cb)]))
@@ -1052,6 +1135,7 @@ def build_static_pages():
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">ABOUT</span>
 <h1>마사지고 소개</h1>
 <p class="lead">마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. 서울·경기·인천·부산 전 권역에서, 같은 원칙을 매번 지키는 운영을 목표로 합니다.</p>
+{byline(author="김세영", reviewer="박지연")}
 <div class="grid g3" style="margin:30px 0">{team}</div>
 <div class="databox reveal"><h3>운영 데이터 (1차 배차 로그)</h3>
 <p>· 집계 기간: 최근 {OPS['months']}개월 · 총 배차 {OPS['dispatch_total']:,}건</p>
@@ -1060,10 +1144,11 @@ def build_static_pages():
 {n_html}
 <section class="wrap tight"><div class="prose" style="max-width:660px">
 <p style="color:var(--dim);font-size:13.5px">본 서비스는 건강관리를 위한 이완 서비스이며 의료 행위가 아닙니다. 19세 이상 이용 가능합니다.</p></div></section>
+{references_block(extra_internal=[("편집 정책","/editorial-policy/"),("연락처","/contact/"),("개인정보처리방침","/policy/privacy/"),("이용약관","/policy/terms/")])}
 {cta_band()}"""
     write("/about/", page(f"회사 소개 — 운영 방식·운영팀·데이터 | {SITE['brand']}",
         "마사지고는 본사 디스패처가 직접 매니저를 배정하는 출장마사지 운영팀입니다. Who/How/Why 운영 원칙, 운영팀·자문 트레이너, 1차 배차 데이터를 공개합니다.",
-        "/about/", body, [ORG_JSONLD, breadcrumb_jsonld(cb)]))
+        "/about/", body, [ORG_JSONLD, webpage_jsonld("/about/", "회사 소개", "마사지고 운영 방식·운영팀·데이터", typ="AboutPage"), breadcrumb_jsonld(cb)]))
 
     # contact
     cb = [("홈", "/"), ("연락처", None)]
@@ -1292,6 +1377,7 @@ def build_locations():
         ]
         body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(v["en"]).upper()}</span>
 <h1>{esc(v['ko'])} 출장마사지</h1><p class="lead">{esc(v['intro'])}</p>
+{byline(author=("김세영" if k in ("seoul","gyeonggi") else "이도현"), reviewer="박지연")}
 <div class="chips">
 <div class="chip"><span class="k">행정구</span><span class="v grad">{len(v['districts'])}개 전역</span></div>
 <div class="chip"><span class="k">누적 배차</span><span class="v">{OPS['by_region'].get(v['ko'],0):,}건</span></div>
@@ -1302,11 +1388,15 @@ def build_locations():
 <p class="lead">각 지역의 동(洞)별 도착 시간과 고유 후기를 확인하세요.</p>
 <div class="grid g3" style="margin-top:24px">{dist_cards}</div></section>
 <section class="wrap tight"><span class="eyebrow">FAQ</span><h2>{esc(v['ko'])} 자주 묻는 질문</h2><div style="margin-top:20px">{faq_block(faqs)}</div></section>
+{references_block(extra_internal=[("지역 전체 보기","/locations/"),("요금 안내","/pricing/"),("회사 소개","/about/"),("편집 정책","/editorial-policy/")])}
 {cta_band()}"""
+        metro_author = "김세영" if k in ("seoul","gyeonggi") else "이도현"
         write(f"/locations/{k}/", page(
             f"{v['ko']} 출장마사지 — {len(v['districts'])}개 지역 전역 출장 | {SITE['brand']}",
             f"{v['ko']} 전역 출장마사지. {v['intro']} {len(v['districts'])}개 행정구 권역 특징·도착 시간·인기 코스 안내, 예약 {SITE['phone']}.",
-            f"/locations/{k}/", body, [breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
+            f"/locations/{k}/", body,
+            [webpage_jsonld(f"/locations/{k}/", f"{v['ko']} 출장마사지", v['intro'], author=metro_author, reviewer="박지연"),
+             breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
         # districts
         for (dko, dslug, character, dongs, landmark) in v["districts"]:
             build_district(k, v, dko, dslug, character, dongs, landmark)
@@ -1316,6 +1406,7 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
     cb = [("홈", "/"), ("지역", "/locations/"), (v["ko"], f"/locations/{metro}/"), (dko, None)]
     rating = district_rating(metro, dslug)
     rc = district_review_count(metro, dslug)
+    dist_author = "김세영" if metro in ("seoul", "gyeonggi") else "이도현"
     # 동별 도착시간
     dong_rows = "".join(
         f'<div class="book-row"><span>{esc(dn)}</span><span>약 {arrival_minutes(metro, dslug, dn)}분</span></div>'
@@ -1382,6 +1473,7 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
     body = f"""<section class="wrap">{crumb(cb)}<span class="eyebrow">{esc(v['en']).upper()} · {esc(dko)} OPERATIONS</span>
 <h1>{esc(dko)} 출장마사지</h1>
 <p class="lead">{esc(dko)} {esc(character)}. {esc(landmark)} 일대를 중심으로 매니저를 배치합니다.</p>
+{byline(author=dist_author, reviewer="박지연")}
 <div class="chips">
 <div class="chip"><span class="k">AVG ARRIVAL</span><span class="v grad">약 {avg_d}분</span></div>
 <div class="chip"><span class="k">AVAILABLE</span><span class="v">24/7 연중무휴</span></div>
@@ -1397,11 +1489,13 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
 <section class="wrap tight"><span class="eyebrow">FIELD NOTES · 2026</span><h2>{esc(dko)} 운영 노트</h2>
 <div class="notes" style="margin-top:24px">{fn}</div></section>
 
-<section class="wrap tight"><span class="eyebrow">DATA &amp; METHODOLOGY</span><h2>데이터 출처</h2>
+<section class="wrap tight"><span class="eyebrow">DATA &amp; METHODOLOGY</span><h2>데이터 출처와 산정 방법</h2>
 <div class="databox reveal" style="margin-top:18px">
-<p>· 위 수치는 마사지고 본사 배차 시스템의 1차 운영 로그를 {esc(dko)} 단위로 집계한 값입니다.</p>
-<p>· {esc(v['ko'])} 권역 누적 배차 {OPS['by_region'].get(v['ko'], 0):,}건을 기반으로 산출했습니다.</p>
-<p>· 평점 {rating}은 {esc(dko)} 이용 고객 {rc}건의 후기 평균입니다.</p></div></section>
+<p>· 도착 시간은 마사지고 본사 배차 시스템에 기록된 {esc(v['ko'])} 권역 운영 로그를 {esc(dko)} 단위로 집계한 <b>대표 추정값</b>입니다.</p>
+<p>· 교통 상황·시간대·매니저 대기 위치에 따라 달라지므로, 실제 예상 시간은 예약 시 현재 위치를 확인한 뒤 안내드립니다.</p>
+<p>· 산정 기준: {esc(v['ko'])} 권역 누적 배차 약 {OPS['by_region'].get(v['ko'], 0):,}건 · 집계 기간 최근 {OPS['months']}개월.</p>
+<p>· 평점 {rating}({rc}건)은 {esc(dko)} 이용 고객이 남긴 후기의 평균이며, 로그가 쌓일수록 갱신됩니다.</p>
+<p style="font-size:12.5px;color:var(--dim)">· 작성: {esc(dist_author)}({esc(AUTHORS[dist_author]['role'])}) · 감수: 박지연(안전 자문 트레이너) · 최종 업데이트 {NOW}</p></div></section>
 
 <section class="wrap tight"><span class="eyebrow">PRICING</span><h2>{esc(dko)} 출장마사지 요금</h2>
 <div class="grid g3" style="margin-top:24px">{pcards}</div></section>
@@ -1413,6 +1507,7 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
 <div style="margin-top:20px">{faq_block(faqs)}</div></section>
 
 <section class="wrap tight"><h2>{esc(v['ko'])} 다른 지역</h2><div class="linklist">{nearby}</div></section>
+{references_block(extra_internal=[("개인정보처리방침","/policy/privacy/"),("이용약관","/policy/terms/"),("편집 정책","/editorial-policy/"),(f"{v['ko']} 전체 지역","/locations/"+metro+"/")])}
 {cta_band()}"""
 
     path = f"/locations/{metro}/{dslug}/"
@@ -1429,10 +1524,13 @@ def build_district(metro, v, dko, dslug, character, dongs, landmark):
                             "reviewBody": r["text"],
                             "reviewRating": {"@type": "Rating", "ratingValue": r["stars"], "bestRating": 5}}
                            for r in revs]}
+    wp = webpage_jsonld(path, f"{dko} 출장마사지", f"{v['ko']} {dko} 출장마사지 안내·도착 시간·후기",
+                        author=dist_author, reviewer="박지연",
+                        about={"@type": "AdministrativeArea", "name": f"{v['ko']} {dko}"})
     write(path, page(
         f"{dko} 출장마사지 — 평균 {avg_d}분 도착 · 예약 {SITE['phone']} | {SITE['brand']}",
         f"{v['ko']} {dko} 출장마사지. {landmark} 인근 평균 약 {avg_d}분 도착, 동별 도착 시간·요금·{dko} 고객 후기 안내. {SITE['hours']}, 예약 {SITE['phone']}.",
-        path, body, [local_ld, breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
+        path, body, [local_ld, wp, breadcrumb_jsonld(cb), faq_jsonld(faqs)]))
 
 
 # ─────────────────────────────────────────────────────────────
