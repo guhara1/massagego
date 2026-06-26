@@ -1627,6 +1627,12 @@ Host: {host}
         with open(os.path.join(ROOT, f"{key}.txt"), "w", encoding="utf-8") as f:
             f.write(key)
 
+    # 네이버 Search Advisor HTML 파일 인증 — 루트에 동명 파일 배포
+    nfile = SITE.get("naver_verify_html", "")
+    if nfile:
+        with open(os.path.join(ROOT, nfile), "w", encoding="utf-8") as f:
+            f.write(f"naver-site-verification: {nfile}")
+
     # RSS 2.0 피드 (매거진)
     import email.utils, datetime as _dt
     def rfc822(dstr):
