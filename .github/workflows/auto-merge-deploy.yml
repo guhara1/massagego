@@ -1,0 +1,66 @@
+name: Auto merge & deploy
+
+# 개발 브랜치에 푸시되면 배포 브랜치로 자동 머지한다.
+#  - Vercel: 배포 브랜치 푸시 이벤트로 자동 배포(외부 GitHub App webhook)
+#  - GitHub Pages: 토큰 푸시는 deploy.yml을 재트리거하지 않으므로 여기서 인라인 배포
+on:
+  push:
+    branches:
+      - claude/massagego-domain-change-zb9cf8
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: auto-merge-deploy
+  cancel-in-progress: false
+
+jobs:
+  merge-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge feature into deploy branch
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin claude/intelligent-mccarthy-bt42U:claude/intelligent-mccarthy-bt42U
+          git checkout claude/intelligent-mccarthy-bt42U
+          if git merge-base --is-ancestor "$GITHUB_SHA" HEAD; then
+            echo "이미 머지됨 — 건너뜀"
+          else
+            git merge --no-ff "$GITHUB_SHA" \
+              -m "Auto-merge ${GITHUB_SHA:0:7} → deploy"
+            git push origin claude/intelligent-mccarthy-bt42U
+          fi
+
+      - name: Stage static site (exclude generator sources)
+        run: |
+          mkdir -p _site
+          rsync -a --exclude='.git' --exclude='.github' --exclude='build' \
+                --exclude='_site' --exclude='.gitignore' ./ _site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
