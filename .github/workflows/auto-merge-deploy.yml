@@ -1,7 +1,10 @@
 name: Auto merge & deploy
 
 # 개발 브랜치에 푸시되면 배포 브랜치로 자동 머지한다.
-# 배포 브랜치 푸시는 Vercel(외부 GitHub App)의 자동 배포를 트리거한다.
+#  - Vercel: 배포 브랜치 푸시 이벤트로 자동 배포(외부 GitHub App)
+#  - GitHub Pages: 시크릿 DEPLOY_PAT가 설정돼 있으면 PAT로 푸시 → deploy.yml 재트리거
+#                  (GITHUB_TOKEN 푸시는 다른 워크플로를 재트리거하지 못하므로 PAT 필요)
+#                  DEPLOY_PAT가 없으면 GITHUB_TOKEN으로 폴백(=Vercel만 배포).
 on:
   push:
     branches:
@@ -23,8 +26,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # PAT가 있으면 그 토큰으로 푸시 → deploy.yml(Pages) 재트리거. 없으면 기본 토큰.
+          token: ${{ secrets.DEPLOY_PAT || github.token }}
 
-      - name: Merge feature into deploy branch (→ Vercel auto-deploy)
+      - name: Merge feature into deploy branch (→ Vercel + Pages auto-deploy)
         run: |
           set -e
           git config user.name "github-actions[bot]"
