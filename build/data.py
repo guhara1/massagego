@@ -29,6 +29,8 @@ SITE = {
     "naver_verify": "7c9f67853d3b7c79bc0fc710afc3c924e636e91d",
     # IndexNow 키 — 글 발행 시 빙·네이버에 즉시 색인 통보 (키 파일: /{key}.txt)
     "indexnow_key": "784880b4733cd1b8b37eb42fea7762f3",
+    # 네이버 Search Advisor HTML 파일 인증 — 루트에 동명 파일 배포
+    "naver_verify_html": "naver2cea97ae99ef710a53dcf2414f9099a2.html",
 }
 SITE["phone_href"] = "tel:" + SITE["phone"].replace("-", "")
 
