@@ -27,6 +27,8 @@ SITE = {
     # 검색엔진 사이트 소유확인 코드
     "google_verify": "X93GGlzAy5MWuA-HXEijTHTQCYAIa3_j7FVZKL1k9pg",
     "naver_verify": "7c9f67853d3b7c79bc0fc710afc3c924e636e91d",
+    # IndexNow 키 — 글 발행 시 빙·네이버에 즉시 색인 통보 (키 파일: /{key}.txt)
+    "indexnow_key": "784880b4733cd1b8b37eb42fea7762f3",
 }
 SITE["phone_href"] = "tel:" + SITE["phone"].replace("-", "")
 

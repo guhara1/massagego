@@ -1621,6 +1621,12 @@ Host: {host}
     with open(os.path.join(ROOT, "robots.txt"), "w", encoding="utf-8") as f:
         f.write(robots)
 
+    # IndexNow 키 파일 — 루트에 {key}.txt 로 키 자체를 노출 (소유 증명)
+    key = SITE.get("indexnow_key", "")
+    if key:
+        with open(os.path.join(ROOT, f"{key}.txt"), "w", encoding="utf-8") as f:
+            f.write(key)
+
     # RSS 2.0 피드 (매거진)
     import email.utils, datetime as _dt
     def rfc822(dstr):
