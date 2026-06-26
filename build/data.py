@@ -10,7 +10,7 @@ SITE = {
     "brand": "마사지고",
     "brand_en": "MassageGo",
     "tagline": "출장마사지 — 당신의 공간에 도착하는 한 시간의 휴식",
-    "domain": "https://massagego-6r2z.vercel.app",  # Vercel 프로덕션 고정 도메인 (실도메인 연결 시 치환)
+    "domain": "https://massagego1.vercel.app",  # Vercel 프로덕션 고정 도메인 (실도메인 연결 시 치환)
     "phone": "0508-202-4719",
     "phone_intl": "+82-508-202-4719",
     "phone_href": "tel:050820247419"[:13],  # tel:0508-2024719 형태로 아래에서 보정
@@ -26,7 +26,7 @@ SITE = {
     "email": "[추후입력]",
     # 검색엔진 사이트 소유확인 코드
     "google_verify": "X93GGlzAy5MWuA-HXEijTHTQCYAIa3_j7FVZKL1k9pg",
-    "naver_verify": "82f7c17cea10de709f0c56623b4dbafbbe6bbed1",
+    "naver_verify": "7c9f67853d3b7c79bc0fc710afc3c924e636e91d",
 }
 SITE["phone_href"] = "tel:" + SITE["phone"].replace("-", "")
 

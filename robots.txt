@@ -33,5 +33,5 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://massagego-6r2z.vercel.app/sitemap.xml
-Host: massagego-6r2z.vercel.app
+Sitemap: https://massagego1.vercel.app/sitemap.xml
+Host: massagego1.vercel.app
