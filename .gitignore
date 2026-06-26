@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# 구글 Indexing API 서비스 계정 키 (절대 커밋 금지)
+google-service-account.json
+tools/google-service-account.json
+*service-account*.json
