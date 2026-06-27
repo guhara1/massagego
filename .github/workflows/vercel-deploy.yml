@@ -1,0 +1,61 @@
+name: Deploy to Vercel (production)
+
+# GitHub에서 Vercel 프로덕션으로 직접 배포한다.
+# 필요한 시크릿(저장소 Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN       — https://vercel.com/account/tokens 에서 발급
+#   VERCEL_ORG_ID      — Vercel 프로젝트가 속한 팀/계정 ID
+#   VERCEL_PROJECT_ID  — Vercel 프로젝트 ID (Project → Settings → General)
+# 시크릿이 하나라도 없으면 배포를 건너뛴다(에러 없이).
+on:
+  push:
+    branches:
+      - claude/massagego-domain-change-zb9cf8
+      - claude/intelligent-mccarthy-bt42U
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-prod
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Check secrets
+        id: chk
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID 시크릿이 없어 Vercel 배포를 건너뜁니다."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.chk.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: steps.chk.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        if: steps.chk.outputs.ready == 'true'
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project settings (production)
+        if: steps.chk.outputs.ready == 'true'
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Deploy to Vercel production
+        if: steps.chk.outputs.ready == 'true'
+        run: |
+          url=$(vercel deploy --prod --token="$VERCEL_TOKEN")
+          echo "배포 완료: $url"
+          echo "deployed-url=$url" >> "$GITHUB_STEP_SUMMARY"
